@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIRPM — AI Readiness Propagation Model</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--ink:#1d2433;--muted:#5f6b7d;--line:#e3e7ed;--accent:#0b3d91;--accent-soft:#e8eef9;--pos:#177245;--neg:#b42318;--warn:#8a5a00;--warn-bg:#fff7e6}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+header{background:#0f1b33;color:#fff;padding:22px 0 18px}
+.wrap{max-width:1400px;margin:0 auto;padding:0 20px}
+header h1{margin:0;font:600 22px/1.25 Georgia,"Times New Roman",serif;letter-spacing:.2px}
+header p{margin:4px 0 0;color:#b9c3d6;font-size:13.5px}
+.controls{background:#fff;border-bottom:1px solid var(--line)}
+.controls .wrap{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end;padding-top:12px;padding-bottom:12px}
+.ctl{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.ctl label{font-weight:600;color:var(--ink);font-size:12px;display:flex;gap:5px;align-items:center}
+.ctl input[type=number],.ctl select{width:96px;padding:6px 8px;border:1px solid #cfd5de;border-radius:6px;font:inherit;font-size:13px;background:#fff;color:var(--ink)}
+.datasrc{flex:1 1 320px;min-width:280px}
+.datasrc .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#e7f4ec;color:var(--pos)}
+.chip.bad{background:#fdecea;color:var(--neg)}
+.chip.idle{background:#eef1f5;color:#475467}.chip.ready{background:#fff4dd;color:#8a5a00}
+button:disabled{opacity:.45;cursor:not-allowed}
+.empty-msg{display:none;text-align:center;padding:56px 20px;color:var(--muted);background:#fff;border:1px dashed #cfd5de;border-radius:10px;margin-bottom:16px}
+.empty-msg h2{font:600 18px Georgia,serif;color:var(--ink);margin:0 0 6px}
+body.no-results .empty-msg{display:block}
+body.no-results .panel > :not(.empty-msg):not(.keep){display:none}
+#staleBar{display:none;background:#fff4dd;border-bottom:1px solid #f3d9a4;color:#8a5a00;font-size:13px;font-weight:600}
+#staleBar .wrap{padding-top:8px;padding-bottom:8px;display:flex;gap:12px;align-items:center}
+body.stale #staleBar{display:block}
+button{font:inherit;font-size:13px;cursor:pointer;border-radius:6px;padding:6px 12px;border:1px solid #cfd5de;background:#fff;color:var(--ink)}
+button:hover{background:#f2f4f7}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#0a3480}
+button.on{background:var(--accent-soft);border-color:#9fb5dd;color:var(--accent);font-weight:600}
+input[type=file]{font-size:12.5px;max-width:250px}
+.help{display:inline-flex;width:15px;height:15px;border-radius:50%;background:#e4e8ef;color:#475467;font-size:10px;font-weight:700;align-items:center;justify-content:center;cursor:help}
+nav{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(16,24,40,.04)}
+nav .wrap{display:flex;gap:2px;overflow-x:auto;padding-top:6px;padding-bottom:6px}
+nav button{border:0;background:none;padding:8px 12px;color:#475467;font-weight:600;white-space:nowrap;border-radius:6px}
+nav button.active{background:var(--accent-soft);color:var(--accent)}
+main{padding:20px 0 60px}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font:600 17px/1.3 Georgia,"Times New Roman",serif}
+.card h3{margin:16px 0 8px;font-size:14px}
+.card .sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:1000px){.g4,.g5{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:1fr}}
+@media (max-width:640px){.g2,.g4,.g5{grid-template-columns:1fr}}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:11px 13px;background:#fbfcfd}
+.kpi .l{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.kpi .v{font-size:19px;font-weight:700;margin-top:3px}
+.kpi .d{font-size:12px;color:var(--muted)}
+.kpi.hero .v{font-size:25px;color:var(--accent)}
+.dimcard{border-top:4px solid #999}
+.rq{border-left:4px solid var(--accent)}
+.rq dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0 0;font-size:13px}
+.rq dt{color:var(--muted)}.rq dd{margin:0;font-weight:600}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.note{background:#f5f7fb;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:12.5px;color:#344054;margin:10px 0}
+.note.warn{background:var(--warn-bg);border-color:#f3d9a4;color:var(--warn)}
+.note.model{background:#f3f0fb;border-color:#d9d0f0;color:#4a3a80}
+.tbl{overflow:auto;border:1px solid var(--line);border-radius:8px;max-height:640px}
+table{border-collapse:collapse;width:100%;font-size:12.8px}
+th,td{padding:6px 9px;border-bottom:1px solid #eef0f3;text-align:left;white-space:nowrap}
+th{background:#f7f8fa;position:sticky;top:0;font-weight:600;color:#344054;z-index:1}
+th.sortable{cursor:pointer}th.sortable:hover{background:#eef1f5}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr:hover td{background:#fafbfd}
+.dimdot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:4px 0 12px}
+.toolbar .grp{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.toolbar .lab{font-size:12px;font-weight:600;color:var(--muted);margin-right:2px}
+.toolbar select,.toolbar input[type=text],.toolbar input[type=number]{padding:5px 8px;border:1px solid #cfd5de;border-radius:6px;font:inherit;font-size:13px}
+.status-line{font-size:12.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:7px 11px;border-radius:6px;margin-bottom:10px}
+.status-line.filter{color:var(--warn);background:var(--warn-bg)}
+.figwrap{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.netbox{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px}
+@media (max-width:1100px){.netbox{grid-template-columns:1fr}}
+.netsvg{cursor:grab;touch-action:none}
+.netsvg:active{cursor:grabbing}
+.side h4{margin:12px 0 6px;font-size:13px}
+.side table td,.side table th{padding:4px 7px}
+.caption{font-size:12.5px;color:#475467;margin:8px 2px 0;line-height:1.5}
+.caption b{color:var(--ink)}
+.fig{margin-bottom:26px}
+.figbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.figbar h3{margin:0;font-size:14px}
+.scen-row{display:grid;grid-template-columns:150px 120px 80px 1fr 80px 90px;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid #f0f2f5;font-size:13px}
+.scen-row.head{font-weight:600;color:var(--muted);font-size:12px}
+.scen-row input[type=range]{width:100%}
+.scen-row input[type=number]{width:74px;padding:4px 6px;border:1px solid #cfd5de;border-radius:6px}
+@media (max-width:800px){.scen-row{grid-template-columns:1fr 1fr}}
+.method h3{font:600 15px Georgia,serif;margin:22px 0 6px}
+.eq{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:16px;background:#f7f8fb;border-left:3px solid var(--accent);padding:8px 14px;margin:8px 0;overflow-x:auto;white-space:nowrap}
+.dq{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+@media (max-width:1000px){.dq{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.issues{max-height:140px;overflow:auto;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace;background:#fff6f5;border:1px solid #f5c6c0;border-radius:6px;padding:8px}
+#tip{position:fixed;pointer-events:none;background:#111827;color:#fff;padding:7px 10px;border-radius:6px;font-size:12px;line-height:1.45;max-width:380px;z-index:100;display:none;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+#tip b{color:#fff}
+.mhead{position:sticky;left:0;background:#f7f8fa;z-index:2}
+.pubtable caption{caption-side:top;text-align:left;font:600 14px Georgia,serif;padding:0 0 8px;color:var(--ink)}
+.pubtable{margin-bottom:6px}
+.pubtable td,.pubtable th{border-bottom:1px solid #e6e8ec}
+.pubtable thead th{border-top:2px solid #1d2433;border-bottom:1px solid #1d2433;background:#fff;position:static}
+.pubtable tbody tr:last-child td{border-bottom:2px solid #1d2433}
+.small{font-size:12px;color:var(--muted)}
+.attn{border-left:4px solid var(--neg)}
+</style>
+</head>
+<body class="no-results">
+<header><div class="wrap">
+  <h1>AI Readiness Propagation Model (AIRPM)</h1>
+  <p>A Network-Based Framework for Organizational AI Readiness · 18 factors · 5 dimensions · co-endorsement influence network · folksonomy AI Readiness Rank (ARR) · propagation equilibrium · scenario, amplification &amp; resilience analysis</p>
+</div></header>
+
+<section class="controls"><div class="wrap">
+  <div class="ctl datasrc">
+    <label>Data source <span class="help" data-tip="Upload a survey file: CSV, Excel .xlsx or .xls (18 factor columns, ratings 1–5; an identifier column, extra columns and a banner row above the header are allowed). The file is validated first. Then click Run Simulation to compute all results. Invalid files are rejected. If you change parameters after a run, click Run Simulation again to update the results.">?</span></label>
+    <div class="row"><span id="dsChip" class="chip idle">No dataset loaded</span><input type="file" id="fileIn" accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><button id="btnRun" class="primary" disabled>Run Simulation</button><button id="btnTemplate">Header template</button></div>
+  </div>
+  <div class="ctl"><label for="pTau">τ threshold <span class="help" data-tip="Endorsement threshold. Respondent r endorses factor i when x_ri ≥ τ. Changes the co-endorsement network A and W. Default 4: maturity levels 4 and 5 (capability established across most of the organization) both count as endorsement.">?</span></label>
+    <select id="pTau"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></div>
+  <div class="ctl"><label for="pAlpha">α propagation <span class="help" data-tip="Propagation weight α in R(t+1) = (1−α)a + αWᵀR(t). Share of readiness imported through the network each step. 0 < α < 1. Default 0.85.">?</span></label>
+    <input type="number" id="pAlpha" min="0.01" max="0.99" step="0.01" value="0.85"></div>
+  <div class="ctl"><label for="pD">d ARR damping <span class="help" data-tip="Damping factor d of the folksonomy AI Readiness Rank (CBR/BrandRank step: PageRank on the factor–factor projection C). Affects the ARR only, not readiness. Default 0.85.">?</span></label>
+    <input type="number" id="pD" min="0.01" max="0.99" step="0.01" value="0.85"></div>
+  <div class="ctl"><label for="pIter">Max iterations <span class="help" data-tip="Maximum propagation iterations (1–10,000). Convergence is only reported if the sustained criterion (|ΔRᵢ| < 1e-6 for 3 consecutive iterations) is met within this limit.">?</span></label>
+    <input type="number" id="pIter" min="1" max="10000" step="1" value="100"></div>
+  <div class="ctl"><label>&nbsp;</label><button id="btnDefaults">Reset defaults</button></div>
+</div></section>
+
+<div id="staleBar"><div class="wrap">Parameters have changed since the last run. The results shown are out of date. <button id="btnRun2" class="primary">Run Simulation</button></div></div>
+<nav><div class="wrap" id="tabs">
+  <button data-tab="dashboard" class="active">Dashboard</button>
+  <button data-tab="bipartite">Bipartite Graph</button>
+  <button data-tab="network">Influence Network</button>
+  <button data-tab="propagation">Propagation</button>
+  <button data-tab="scenario">Scenario</button>
+  <button data-tab="amplification">Amplification</button>
+  <button data-tab="resilience">Resilience</button>
+  <button data-tab="sensitivity">Sensitivity</button>
+  <button data-tab="matrix">Influence Matrix</button>
+  <button data-tab="method">Methodology</button>
+</div></nav>
+
+<main><div class="wrap">
+
+<!-- ============ DASHBOARD ============ -->
+<section class="panel active" id="p-dashboard">
+  <div class="card keep"><h2>Data quality</h2><p class="sub" id="dqSource"></p>
+    <div class="dq" id="dqGrid"></div><div id="dqMsgs"></div></div>
+  <div class="card"><h2>Executive summary</h2><p class="sub">Intrinsic readiness is observed (survey-based). Equilibrium readiness is modelled (after network propagation). ARR is the folksonomy-based ranking (centrality in the respondent–factor graph), not readiness.</p>
+    <div class="grid g3" id="kpiHero"></div>
+    <div class="grid g4" id="kpiGrid" style="margin-top:12px"></div></div>
+  <div class="card"><h2>Five readiness dimensions</h2><p class="sub">Dimension value = arithmetic mean of its factors' readiness. Rank is by equilibrium readiness (1 = highest).</p><div class="grid g5" id="dimCards"></div></div>
+  <div class="grid g3" id="rqCards"></div>
+  <div class="card attn"><h2>Immediate attention <span class="small">— Model-based diagnostic signal</span></h2>
+    <p class="sub">Factors with the lowest equilibrium readiness. This is a model-based diagnostic signal derived from association structure, not a causal recommendation.</p><div id="attn"></div></div>
+  <div class="card"><h2>Factor results</h2>
+    <div class="toolbar"><div class="grp"><span class="lab">Dimension</span><select class="dimSel" id="dashDim"></select></div><button id="expFactors">Export CSV</button></div>
+    <div class="tbl" id="factorTable"></div></div>
+</section>
+
+<!-- ============ BIPARTITE ============ -->
+<section class="panel" id="p-bipartite">
+  <div class="card"><h2>Respondent–factor bipartite graph</h2>
+    <p class="sub">Empirical supporting visualization: an edge links respondent r to factor i when x<sub>ri</sub> ≥ τ. Rating-4 edges are drawn at 0.4 px and rating-5 edges at 0.8 px. This graph is not the factor influence network. Display limits change only what is drawn, never the data.</p>
+    <div class="toolbar">
+      <div class="grp"><span class="lab">Respondents</span><button data-bl="10" class="bl">10</button><button data-bl="30" class="bl">30</button><button data-bl="all" class="bl">All</button></div>
+      <div class="grp"><span class="lab">Ratings</span><select id="bpRating"><option value="all">All endorsed (≥ τ)</option><option value="4">Rating 4</option><option value="5">Rating 5</option><option value="45">Rating 4–5</option></select></div>
+      <div class="grp"><span class="lab">Dimension</span><select class="dimSel" id="bpDim"></select></div>
+      <div class="grp"><span class="lab">Search</span><input type="text" id="bpSearch" placeholder="Respondent ID or factor" list="bpList"><datalist id="bpList"></datalist></div>
+      <button id="bpClear">Clear selection</button>
+    </div>
+    <div class="status-line" id="bpStatus"></div>
+    <div class="figwrap" id="bpFig"></div>
+    <div class="note" id="bpDetail">Click a respondent to highlight their endorsed factors, or click a factor to highlight its endorsing respondents. Hover over an edge to see the respondent, factor and rating.</div>
+  </div>
+</section>
+
+<!-- ============ NETWORK ============ -->
+<section class="panel" id="p-network">
+  <div class="card"><h2>Directed factor influence network (W)</h2>
+    <p class="sub">Each non-zero w<sub>ij</sub> = a<sub>ij</sub> / Σ<sub>k</sub>a<sub>ik</sub> is a directed edge i → j. Raw co-endorsement is symmetric, but row normalisation makes weights directional (w<sub>ij</sub> ≠ w<sub>ji</sub>). Filters change only what is drawn. All calculations always use the complete network.</p>
+    <div class="toolbar">
+      <div class="grp"><span class="lab">View</span><button data-nm="all" class="nm">All</button><button data-nm="3" class="nm">Top 3</button><button data-nm="5" class="nm">Top 5</button><button data-nm="10" class="nm">Top 10</button><button data-nm="ego" class="nm">Ego / focus</button></div>
+      <div class="grp"><span class="lab">Focus factor</span><select id="netFocus"></select></div>
+      <div class="grp"><span class="lab">Dimension</span><select class="dimSel" id="netDim"></select></div>
+      <div class="grp"><label class="small"><input type="checkbox" id="netLabels" checked> weight labels (filtered views)</label></div>
+      <div class="grp"><button id="zIn">＋</button><button id="zOut">－</button><button id="zReset">Reset view</button></div>
+    </div>
+    <div class="status-line" id="netStatus"></div>
+    <div class="netbox">
+      <div class="figwrap netsvg" id="netFig"></div>
+      <div class="side card" style="margin:0" id="netSide"></div>
+    </div>
+    <p class="caption">Scroll to zoom, drag to pan. Hover over an edge or node for exact values, and click an edge to pin its details. Clicking a node selects it as the focus factor. Node area ∝ equilibrium readiness (not ARR).</p>
+  </div>
+</section>
+
+<!-- ============ PROPAGATION ============ -->
+<section class="panel" id="p-propagation">
+  <div class="card"><h2>Readiness propagation and equilibrium</h2>
+    <p class="sub">R<sub>i</sub>(t+1) = (1−α)a<sub>i</sub> + α Σ<sub>j</sub> W<sub>ji</sub> R<sub>j</sub>(t), R(0) = a. The analytical equilibrium R* = (1−α)(I − αWᵀ)⁻¹a is solved directly. The iteration is shown to converge to it.</p>
+    <div class="grid g4" id="propKpis"></div><div id="propNotes"></div></div>
+  <div class="card"><div class="figbar"><h3>Overall readiness propagation and convergence AIR(t)</h3></div><div class="figwrap" id="propFig"></div></div>
+  <div class="card"><div class="figbar"><h3>Intrinsic vs. equilibrium readiness</h3><div class="grp"><span class="small">Dimension </span><select class="dimSel" id="propDim"></select></div></div><div class="figwrap" id="dumbFig"></div></div>
+  <div class="card"><h2>Intrinsic vs. equilibrium readiness with convergence iterations</h2><div class="tbl" id="propTable"></div></div>
+</section>
+
+<!-- ============ SCENARIO ============ -->
+<section class="panel" id="p-scenario">
+  <div class="card"><h2>Scenario intervention</h2>
+    <div class="note model"><b>Modelled scenario assumption — not observed causal evidence.</b> a<sub>i</sub><sup>(s)</sup> = clip[a<sub>i</sub>(1 + δ<sub>i</sub>/100), 0, 1]. The empirical network W is <b>not</b> changed. Only intrinsic anchors change, then R<sub>s</sub>* = (1−α)(I − αWᵀ)⁻¹a<sub>s</sub> is recomputed.</div>
+    <div class="toolbar"><button id="scReset">Reset all</button><button id="scAll20">Set all +20%</button></div>
+    <div class="scen-row head"><div>Factor</div><div>Dimension</div><div class="n">aᵢ</div><div>δᵢ (relative %, −100 to +100)</div><div></div><div class="n">aᵢ⁽ˢ⁾</div></div>
+    <div id="scRows"></div></div>
+  <div class="card"><h2>Scenario results</h2><div class="grid g4" id="scKpis"></div><div id="scNote"></div>
+    <div class="figwrap" id="scFig" style="margin-top:12px"></div>
+    <div class="tbl" id="scTable" style="margin-top:12px"></div></div>
+</section>
+
+<!-- ============ AMPLIFICATION ============ -->
+<section class="panel" id="p-amplification">
+  <div class="card"><h2>Amplification</h2>
+    <p class="sub">Standardised one-factor experiments: each factor's intrinsic anchor is raised by the same relative percentage, one factor at a time, with W fixed, and the equilibrium is recomputed.</p>
+    <div class="toolbar"><div class="grp"><span class="lab">Standardised intervention (%)</span><input type="number" id="ampPct" min="1" max="100" step="1" value="20"></div><div class="grp"><span class="lab">Dimension</span><select class="dimSel" id="ampDim"></select></div><button id="expAmp">Export CSV</button></div>
+    <div class="note"><b>Amplification index</b> = Σ<sub>j≠i</sub> max(0, ΔR*<sub>j</sub>) ÷ Δa<sub>i</sub>. This is a <i>normalised</i> ratio: positive spillover per unit of direct anchor improvement. <b>Absolute positive spillover</b> = Σ<sub>j≠i</sub> max(0, ΔR*<sub>j</sub>) in percentage points. It scales with the size of the direct change, which under a relative intervention is larger for factors with higher intrinsic readiness. The two measures can rank factors differently.</div>
+    <div id="ampIdentity"></div>
+    <div class="grid g3" id="ampKpis"></div></div>
+  <div class="card"><div class="figwrap" id="ampFig"></div></div>
+  <div class="card"><h2>Amplification results</h2><div class="tbl" id="ampTable"></div></div>
+</section>
+
+<!-- ============ RESILIENCE ============ -->
+<section class="panel" id="p-resilience">
+  <div class="card"><h2>Resilience: shock and recovery</h2>
+    <p class="sub">For each factor independently, the system starts at the baseline equilibrium R*. The factor's intrinsic anchor is cut by the shock magnitude for the shock duration, then restored, and propagation continues to the horizon. Overall AIR(t) is tracked throughout.</p>
+    <div class="toolbar">
+      <div class="grp"><span class="lab">Shock (%)</span><input type="number" id="rShock" min="-100" max="-1" step="1" value="-30"></div>
+      <div class="grp"><span class="lab">Duration (iterations)</span><input type="number" id="rDur" min="1" max="5000" step="1" value="10"></div>
+      <div class="grp"><span class="lab">Recovery criterion (%)</span><input type="number" id="rCrit" min="50" max="99.9" step="0.1" value="95"></div>
+      <div class="grp"><span class="lab">Horizon</span><input type="number" id="rHor" min="2" max="10000" step="1" value="100"></div>
+      <div class="grp"><span class="lab">Representative factor</span><select id="rFactor"></select></div>
+      <button id="expRes">Export CSV</button>
+    </div>
+    <div class="grid g4" id="resKpis"></div><div id="resNotes"></div></div>
+  <div class="card"><div class="figwrap" id="resFig"></div></div>
+  <div class="card"><div class="figwrap" id="resScatter"></div></div>
+  <div class="card"><h2>Resilience results</h2><div class="tbl" id="resTable"></div></div>
+</section>
+
+<!-- ============ SENSITIVITY ============ -->
+<section class="panel" id="p-sensitivity">
+  <div class="card"><h2>Sensitivity and robustness</h2>
+    <p class="sub">Under the row-stochastic formulation, overall equilibrium readiness equals overall intrinsic readiness for every α, so it cannot serve as a sensitivity response. The responses below are factor-level: dispersion, redistribution extremes, bottom/top factors and rank stability (Spearman ρ against the current-parameter ranking).</p></div>
+  <div class="card"><h3 style="margin-top:0">α sensitivity (τ and W fixed at current values)</h3><div class="tbl" id="sAlpha"></div></div>
+  <div class="card"><h3 style="margin-top:0">τ sensitivity (α fixed at current value; W re-estimated)</h3><div class="tbl" id="sTau"></div></div>
+  <div class="card"><h3 style="margin-top:0">ARR damping d sensitivity (folksonomy projection)</h3><div class="tbl" id="sD"></div></div>
+  <div class="card"><div class="toolbar"><div class="grp"><span class="lab">Heatmap metric</span><select id="heatMetric"><option value="sd">Equilibrium dispersion (SD, pp)</option><option value="range">Equilibrium range (pp)</option><option value="rho">Rank stability (Spearman ρ)</option></select></div></div><div class="figwrap" id="heatFig"></div></div>
+  <div class="card"><h3 style="margin-top:0">Alternative network constructions (τ and α at current values)</h3><p class="sub">The same intrinsic anchors are propagated through networks built in different ways. Jaccard and graded constructions keep the joint-endorsement structure. Lift and correlation networks remove the effect of how often a factor is endorsed. ρ = Spearman correlation with the baseline equilibrium configuration.</p><div class="tbl" id="sAlt"></div><div id="sAltNote"></div></div>
+  <div class="card"><h3 style="margin-top:0">Respondent bootstrap (sampling uncertainty)</h3>
+    <p class="sub">Respondents are resampled with replacement. Each resample re-estimates a, W, ARR and R* at the current τ, α and d. The seeded generator (mulberry32) makes the results exactly reproducible. Intervals are percentile 95% intervals, and ranks are 1 = highest.</p>
+    <div class="toolbar"><div class="grp"><span class="lab">Resamples B</span><input type="number" id="bB" min="100" max="20000" step="100" value="2000"></div><div class="grp"><span class="lab">Seed</span><input type="number" id="bSeed" min="1" max="2147483647" step="1" value="20260925"></div><button id="bRun" class="primary">Re-run bootstrap</button><button id="expBoot">Export CSV</button><span class="small" id="bStatus"></span></div>
+    <div class="grid g4" id="bootKpis"></div><div class="tbl" id="bootTable" style="margin-top:12px"></div></div>
+  <div class="card"><h3 style="margin-top:0">Measurement diagnostics</h3><p class="sub">Internal consistency (Cronbach's α), Harman-type single-factor test (share of the first principal component of the item correlation matrix), and within-group agreement r<sub>wg</sub> against a uniform null distribution (σ²<sub>EU</sub> = 2 for a 5-point scale). The multi-item index r<sub>wg(j)</sub> is computed across all 18 items.</p><div class="grid g4" id="diagKpis"></div><div class="tbl" id="diagTable" style="margin-top:12px"></div></div>
+</section>
+
+<!-- ============ MATRIX ============ -->
+<section class="panel" id="p-matrix">
+  <div class="card"><h2>Influence matrix</h2>
+    <div class="toolbar"><div class="grp"><span class="lab">Show</span><button data-mx="W" class="mx">W (row-normalised influence)</button><button data-mx="A" class="mx">A (raw co-endorsement counts)</button></div><button id="expW">Export W CSV</button><button id="expA">Export A CSV</button></div>
+    <p class="sub" id="mxSub"></p>
+    <div class="tbl" id="mxTable" style="max-height:none"></div>
+    <div id="mxNotes"></div></div>
+</section>
+
+<!-- ============ METHOD ============ -->
+<section class="panel" id="p-method">
+  <div class="card method" id="methodBody"></div>
+</section>
+
+
+</div></main>
+<div id="tip"></div>
+<script>
+/* ==========================================================================
+   AIRPM ENGINE — pure calculation layer (no DOM access).
+   Every number displayed anywhere in the artifact is produced here.
+   ========================================================================== */
+(function (root) {
+'use strict';
+
+const FACTORS = ["AI-business potentials","Customer AI readiness","Top management support","AI-process fit","Data-driven decision-making",
+  "Financial budget","Personnel","IT infrastructure",
+  "AI awareness","Upskilling","AI ethics","Innovativeness","Collaborative work","Change management",
+  "Data availability","Data quality","Data accessibility","Data flow"];
+/* Survey column names used before the Jöhnk et al. (2021) labels; still accepted as CSV headers. */
+const LEGACY_NAMES = ["Usecase","Trust","Top Management","Standard Process","Data culture","Budget","Talent","IT/network",
+  "Understanding","Training","Ethics/safety","Experiment","Cross-silo","Change Management",
+  "Data capture","Data quality","Data access","Data flow"];
+/* AI characteristic and organizational necessity for each factor (Jöhnk et al., 2021). */
+const FACTOR_INFO = [
+  ["AI functions are highly versatile and broadly applicable.", "AI-business potentials ensure that AI adoption is beneficial and suitable for the organization."],
+  ["AI use requires an understanding of the complexity and lack of transparency of learning algorithms.", "Customer AI readiness enables internal or external customers to appropriately use AI-integrated offerings."],
+  ["AI's inherent complexity poses change not only within but across organizational levels, which requires top management commitment.", "Top management support signals AI's strategic relevance to the organization and fosters AI initiatives."],
+  ["AI-based systems are more precise if processes are structured and provide standardized data input.", "AI-process fit through standardization, reengineering and implementation of new processes facilitates AI adoption."],
+  ["AI-based systems are fundamentally data-driven and require openness to incorporate such insights.", "Data-driven decision-making fosters AI adoption because both utilize data and statistical methods to gain insights."],
+  ["AI-based systems require high investments to tailor assets and capabilities to the unique context and data.", "Strategic allocation of the financial budget for AI adoption supports the overcoming of initial obstacles and uncertainty."],
+  ["AI adoption requires a broader spectrum of different roles and know-how for core business use.", "AI specialists and business analysts with AI know-how facilitate AI adoption."],
+  ["Deploying AI poses high workloads and data storage requirements.", "IT infrastructure enables AI-related activities and AI integration."],
+  ["AI's underlying concepts, e.g., machine learning or the autonomy of data-based decision support, are hard to grasp.", "AI awareness ensures that employees have adequate understanding and expectations toward AI."],
+  ["AI-based systems in core business require every employee to have a basic understanding of AI.", "Upskilling enables employees to learn and develop AI or AI-related skills."],
+  ["AI-based systems are at risk for biased learning and unethical outcomes.", "AI ethics comprise measures to prevent bias, safety violations, or discrimination in AI outcomes."],
+  ["Employees' fear of AI-induced job loss threatens proactive innovativeness.", "Innovativeness increases employees' willingness to change the status quo through the application of AI."],
+  ["AI deployment relies on integrating different perspectives, i.e., domain, data and IT.", "Collaborative work enables employees to work in teams and combine different skills."],
+  ["Employees' lack of understanding and fear of AI threaten the acceptance of AI-based systems.", "Change management helps employees to understand and cope with AI-induced organizational change."],
+  ["AI-based systems learn through different data types and large data amounts.", "Data availability within the organization fuels AI solutions."],
+  ["AI-based systems achieve better results the higher the quality of the data they learn with.", "Data quality ensures accurate AI outcomes."],
+  ["AI personnel require access to relevant data sources for deployment.", "Data accessibility facilitates AI experts to easily prototype and develop AI solutions."],
+  ["Initial and continuous training of AI-based systems requires smooth and automated data flow.", "Data flow between its source and its use ensures high data accessibility to AI experts."]
+];
+const DIMENSIONS = [
+  {name:"Strategic Alignment", short:"Strategy",  idx:[0,1,2,3,4]},
+  {name:"Resources",           short:"Resources", idx:[5,6,7]},
+  {name:"Knowledge",           short:"Knowledge", idx:[8,9,10]},
+  {name:"Culture",             short:"Culture",   idx:[11,12,13]},
+  {name:"Data",                short:"Data",      idx:[14,15,16,17]}
+];
+const N_F = FACTORS.length;
+const DIM_OF = FACTORS.map((_, i) => DIMENSIONS.findIndex(d => d.idx.includes(i)));
+
+const DEFAULTS = Object.freeze({
+  tau: 4, alpha: 0.85, d: 0.85, maxIter: 100, tol: 1e-6, stable: 3,
+  ampPct: 20, shockPct: -30, shockDur: 10, recoveryPct: 95, horizon: 100,
+  bootB: 2000, bootSeed: 20260925
+});
+
+/* ---------- header normalisation ---------- */
+const norm = s => String(s).replace(/^﻿/, '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+const ALIASES = {};
+FACTORS.forEach((f, i) => { ALIASES[norm(f)] = i; });
+LEGACY_NAMES.forEach((f, i) => { ALIASES[norm(f)] = i; });
+Object.assign(ALIASES, {
+  usecases: 0, usecase: 0, topmgmt: 2, stdprocess: 3, changemgmt: 13, topmanagement: 2, standardprocess: 3, standardprocesses: 3, stdprocesses: 3,
+  itnetwork: 7, itnetworks: 7, ethicssafety: 10, ethics: 10, experimentation: 11, crosssilos: 12,
+  changemanagement: 13, datacapturing: 14
+});
+
+/* ---------- CSV parsing (RFC-4180 style, quoted fields supported) ---------- */
+function parseCSVText(text) {
+  text = String(text).replace(/^﻿/, '');
+  const rows = []; let row = [], field = '', q = false;
+  for (let k = 0; k < text.length; k++) {
+    const c = text[k];
+    if (q) {
+      if (c === '"') { if (text[k + 1] === '"') { field += '"'; k++; } else q = false; }
+      else field += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[k + 1] === '\n') k++;
+      row.push(field); rows.push(row); row = []; field = '';
+    } else field += c;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(v => String(v).trim() !== ''));
+}
+
+/** Header text -> factor index, or -1. Accepts canonical names, legacy names and "Q1 Use cases"-style labels. */
+function factorOf(h) {
+  const n = norm(h);
+  if (n in ALIASES) return ALIASES[n];
+  const code = n.match(/^q(\d{1,2})$/);                 // bare item codes Q1 … Q18
+  if (code && +code[1] >= 1 && +code[1] <= N_F) return +code[1] - 1;
+  const m = n.replace(/^q\d{1,2}/, '');
+  if (m && m in ALIASES) return ALIASES[m];
+  return m.length >= 6 ? nearAlias(m) : -1;
+}
+/** Tolerates small spelling slips in headers (e.g. "Readdiness", "Potential" for "Potentials"):
+    accepts the alias within edit distance 2 only when it is unique among factors. */
+function editDist(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+function nearAlias(m) {
+  const hits = new Set();
+  for (const k in ALIASES) if (Math.abs(k.length - m.length) <= 2 && editDist(k, m) <= 2) hits.add(ALIASES[k]);
+  return hits.size === 1 ? [...hits][0] : -1;
+}
+const isRating = s => { const t = String(s ?? '').trim(); return t !== '' && isFinite(Number(t)); };
+
+/** Load + validate. Never alters numeric values. Returns {ok, X, ids, report}.
+    Rows above the header (e.g. a category banner row) and extra columns (IDs, demographics, subtotals) are skipped. */
+function loadDataset(text) {
+  const rep = { errors: [], warnings: [], issues: [], missing: 0, nonNumeric: 0, outOfRange: 0, nonInteger: 0,
+                raggedRows: 0, idColumn: false, headerMap: [], mappedBy: 'name', N: 0, min: null, max: null,
+                headerRow: 1, ignoredColumns: [] };
+  const rows = parseCSVText(text);
+  if (rows.length < 2) { rep.errors.push('The file must contain a header row and at least one respondent row.'); return { ok: false, report: rep }; }
+  // header = first row (within the first 10) that names all 18 factors; otherwise the first mostly
+  // non-numeric row followed by a mostly numeric row (a missing rating in row 2 must not move the header)
+  const lim = Math.min(10, rows.length - 1);
+  const numCount = r => rows[r].filter(isRating).length;
+  let h = -1;
+  for (let r = 0; r < lim && h < 0; r++) { if (new Set(rows[r].map(factorOf).filter(v => v >= 0)).size === N_F) h = r; }
+  for (let r = 0; r < lim && h < 0; r++) { if (numCount(r) < N_F / 2 && numCount(r + 1) >= N_F / 2) h = r; }
+  if (h < 0) h = 0;
+  if (h > 0) { rep.headerRow = h + 1; rep.warnings.push(`Skipped ${h} row(s) above the header (header found on row ${h + 1}).`); }
+  const header = rows[h].map(hd => String(hd).replace(/^﻿/, '').trim());
+  const body = rows.slice(h + 1);
+  let cols, idCol = -1;                      // cols[factor] = absolute column index
+  const byName = header.map(factorOf);
+  const found = FACTORS.map((_, i) => byName.indexOf(i));
+  const uniqueAll = found.every(c => c >= 0) && FACTORS.every((_, i) => byName.filter(v => v === i).length === 1);
+  if (uniqueAll) {
+    cols = found; rep.mappedBy = 'name';
+    const fuzzy = cols.map((c, i) => [header[c], i]).filter(([hd]) => { const k = norm(hd).replace(/^q\d{1,2}/, ''); return !(norm(hd) in ALIASES) && !(k in ALIASES) && !/^q\d{1,2}$/.test(norm(hd)); });
+    if (fuzzy.length) rep.warnings.push(`Matched ${fuzzy.length} header(s) despite small spelling differences: ${fuzzy.map(([hd, i]) => `"${hd}" → ${FACTORS[i]}`).join('; ')}. Please check these columns.`);
+    const used = new Set(cols);
+    const extra = header.map((hd, c) => [hd, c]).filter(([, c]) => !used.has(c));
+    if (extra.length && extra[0][1] === 0 && !cols.includes(0)) { idCol = 0; rep.idColumn = true; }
+    rep.ignoredColumns = extra.filter(([, c]) => c !== idCol).map(([hd, c]) => hd || `column ${c + 1}`);
+    if (rep.ignoredColumns.length) rep.warnings.push(`Ignored ${rep.ignoredColumns.length} column(s) that are not one of the 18 factors: ${rep.ignoredColumns.join(', ')}.`);
+  } else if (header.length === N_F || header.length === N_F + 1) {
+    const offset = header.length === N_F + 1 ? 1 : 0;
+    if (offset) { idCol = 0; rep.idColumn = true; }
+    cols = FACTORS.map((_, i) => i + offset); rep.mappedBy = 'position';
+    rep.warnings.push('Not all headers matched the factor names; columns were mapped by position (column order must follow the factor order).');
+  } else {
+    rep.errors.push(`Could not identify the 18 factor columns. Use the factor names as headers (see "Header template"), or provide exactly 18 factor columns (optionally preceded by one identifier column); found ${header.length} columns.`);
+    return { ok: false, report: rep };
+  }
+  rep.headerMap = FACTORS.map((f, i) => ({ factor: f, source: header[cols[i]] }));
+  const X = [], ids = [];
+  body.forEach((raw, k) => {
+    const r = h + 1 + k;                       // 0-based file row
+    if (raw.length !== header.length) rep.raggedRows++;
+    ids.push(idCol >= 0 ? String(raw[idCol] ?? '').trim() || `R${k + 1}` : `R${k + 1}`);
+    const vals = [];
+    for (let i = 0; i < N_F; i++) {
+      const cell = raw[cols[i]];
+      const s = cell === undefined ? '' : String(cell).trim();
+      const where = `row ${r + 1}, ${FACTORS[i]}`;
+      if (s === '') { rep.missing++; rep.issues.push(`${where}: missing value`); vals.push(NaN); continue; }
+      const v = Number(s);
+      if (!isFinite(v)) { rep.nonNumeric++; rep.issues.push(`${where}: non-numeric value "${s}"`); vals.push(NaN); continue; }
+      if (v < 1 || v > 5) { rep.outOfRange++; rep.issues.push(`${where}: value ${v} outside 1–5`); vals.push(NaN); continue; }
+      if (!Number.isInteger(v)) rep.nonInteger++;
+      rep.min = rep.min === null ? v : Math.min(rep.min, v);
+      rep.max = rep.max === null ? v : Math.max(rep.max, v);
+      vals.push(v);
+    }
+    X.push(vals);
+  });
+  rep.N = X.length;
+  if (rep.raggedRows) rep.warnings.push(`${rep.raggedRows} row(s) had a different number of fields from the header.`);
+  if (rep.nonInteger) rep.warnings.push(`${rep.nonInteger} value(s) are non-integer; they were retained unchanged.`);
+  const invalid = rep.missing + rep.nonNumeric + rep.outOfRange;
+  rep.invalid = rep.nonNumeric + rep.outOfRange;
+  if (invalid) rep.errors.push(`${invalid} invalid cell(s): ${rep.missing} missing, ${rep.nonNumeric} non-numeric, ${rep.outOfRange} outside the 1–5 range.`);
+  return { ok: rep.errors.length === 0, X, ids, report: rep };
+}
+
+/* ---------- linear algebra helpers ---------- */
+const zeros = n => Array(n).fill(0);
+const mean = v => v.reduce((s, x) => s + x, 0) / v.length;
+const sdPop = v => { const m = mean(v); return Math.sqrt(v.reduce((s, x) => s + (x - m) ** 2, 0) / v.length); };
+const argmax = v => v.reduce((b, x, i) => (x > v[b] ? i : b), 0);
+const argmin = v => v.reduce((b, x, i) => (x < v[b] ? i : b), 0);
+const clip01 = x => Math.min(1, Math.max(0, x));
+/** y = Wᵀ x, i.e. y_i = Σ_j W_ji x_j */
+function WTx(W, x) { const n = x.length, y = zeros(n); for (let j = 0; j < n; j++) { const xj = x[j], Wj = W[j]; for (let i = 0; i < n; i++) y[i] += Wj[i] * xj; } return y; }
+/** Solve M x = b by Gaussian elimination with partial pivoting. */
+function solve(M, b) {
+  const n = b.length, A = M.map((r, i) => [...r, b[i]]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]];
+    for (let r = c + 1; r < n; r++) { const f = A[r][c] / A[c][c]; if (f) for (let k = c; k <= n; k++) A[r][k] -= f * A[c][k]; }
+  }
+  const x = zeros(n);
+  for (let r = n - 1; r >= 0; r--) { let s = A[r][n]; for (let k = r + 1; k < n; k++) s -= A[r][k] * x[k]; x[r] = s / A[r][r]; }
+  return x;
+}
+function ranksDesc(v) { // average ranks, 1 = largest
+  const o = v.map((x, i) => [x, i]).sort((a, b) => b[0] - a[0]); const r = zeros(v.length);
+  for (let k = 0; k < o.length;) { let e = k; while (e + 1 < o.length && o[e + 1][0] === o[k][0]) e++; const avg = (k + e) / 2 + 1; for (let q = k; q <= e; q++) r[o[q][1]] = avg; k = e + 1; }
+  return r;
+}
+function pearson(x, y) { const mx = mean(x), my = mean(y); let sxy = 0, sx = 0, sy = 0; for (let i = 0; i < x.length; i++) { sxy += (x[i] - mx) * (y[i] - my); sx += (x[i] - mx) ** 2; sy += (y[i] - my) ** 2; } return sx && sy ? sxy / Math.sqrt(sx * sy) : NaN; }
+const spearman = (x, y) => pearson(ranksDesc(x), ranksDesc(y));
+
+/* ---------- model components ---------- */
+function intrinsic(X) {
+  const means = FACTORS.map((_, i) => mean(X.map(r => r[i])));
+  return { means, a: means.map(m => (m - 1) / 4) };
+}
+function coEndorsement(X, tau) {
+  const A = FACTORS.map(() => zeros(N_F));
+  for (const r of X) { const e = r.map(v => v >= tau); for (let i = 0; i < N_F; i++) if (e[i]) for (let j = 0; j < N_F; j++) if (j !== i && e[j]) A[i][j]++; }
+  return A;
+}
+function influenceMatrix(A) {
+  const dangling = [];
+  const W = A.map((row, i) => {
+    const s = row.reduce((t, x) => t + x, 0);
+    if (s > 0) return row.map(x => x / s);
+    dangling.push(i); return row.map((_, j) => (j === i ? 0 : 1 / (N_F - 1)));
+  });
+  return { W, dangling, rowTotals: A.map(r => r.reduce((t, x) => t + x, 0)) };
+}
+/** Folksonomy projection (CBR of Dey, Jenamani & De, 2025, adapted): respondent–factor bipartite graph with edge weights
+    x̃ri = (xri − 1)/4, projected onto a factor–factor graph  C(i,j) = Σr x̃ri · x̃rj  (i ≠ j), C(i,i) = 0. */
+function folksonomyProjection(X) {
+  const C = FACTORS.map(() => zeros(N_F));
+  for (const r of X) { const t = r.map(v => (v - 1) / 4); for (let i = 0; i < N_F; i++) for (let j = 0; j < N_F; j++) if (i !== j) C[i][j] += t[i] * t[j]; }
+  return C;
+}
+/** AI Readiness Rank (ARR): PageRank on the factor–factor folksonomy projection (the CBR "BrandRank" step). */
+function folksonomyRank(X, d) { const C = folksonomyProjection(X); const r = pageRank(C, d); return { p: r.p, iterations: r.iterations, C }; }
+/** Standard PageRank; dangling rows spread uniformly across all 18 nodes. */
+function pageRank(A, d, tol = 1e-13, maxIt = 100000) {
+  const P = A.map(row => { const s = row.reduce((t, x) => t + x, 0); return s > 0 ? row.map(x => x / s) : row.map(() => 1 / N_F); });
+  let p = Array(N_F).fill(1 / N_F), it = 0;
+  for (; it < maxIt; it++) {
+    const q = WTx(P, p).map(x => (1 - d) / N_F + d * x); const s = q.reduce((t, x) => t + x, 0);
+    for (let i = 0; i < N_F; i++) q[i] /= s;
+    const diff = q.reduce((t, x, i) => t + Math.abs(x - p[i]), 0); p = q; if (diff < tol) { it++; break; }
+  }
+  return { p, iterations: it };
+}
+/** Closed form R* = (1−α)(I − αWᵀ)⁻¹ a */
+function equilibrium(W, a, alpha) {
+  const M = FACTORS.map((_, i) => FACTORS.map((_, j) => (i === j ? 1 : 0) - alpha * W[j][i]));
+  return solve(M, a).map(x => (1 - alpha) * x);
+}
+/** R(t+1) = (1−α)a + αWᵀR(t), R(0)=a, with sustained convergence tracking. */
+function propagate(W, a, alpha, maxIter, tol, stable) {
+  let R = a.slice(); const traj = [R.slice()], maxDelta = [null];
+  const streak = zeros(N_F), conv = Array(N_F).fill(null); let sStreak = 0, sConv = null;
+  for (let t = 1; t <= maxIter; t++) {
+    const imp = WTx(W, R), next = a.map((ai, i) => (1 - alpha) * ai + alpha * imp[i]);
+    const dlt = next.map((x, i) => Math.abs(x - R[i])); R = next; traj.push(R.slice());
+    const md = Math.max(...dlt); maxDelta.push(md);
+    for (let i = 0; i < N_F; i++) { streak[i] = dlt[i] < tol ? streak[i] + 1 : 0; if (conv[i] === null && streak[i] >= stable) conv[i] = t; }
+    sStreak = md < tol ? sStreak + 1 : 0; if (sConv === null && sStreak >= stable) sConv = t;
+  }
+  return { traj, maxDelta, factorConv: conv, systemConv: sConv, air: traj.map(mean), final: R };
+}
+function amplification(W, a, alpha, pct, base) {
+  return FACTORS.map((f, i) => {
+    const a2 = a.slice(); a2[i] = clip01(a[i] * (1 + pct / 100));
+    const direct = a2[i] - a[i], eq = equilibrium(W, a2, alpha), diff = eq.map((v, j) => v - base[j]);
+    let spill = 0, affected = 0; diff.forEach((v, j) => { if (j !== i && v > 1e-12) { spill += v; affected++; } });
+    return { i, factor: f, dim: DIM_OF[i], direct, ownChange: diff[i], spill, affected,
+             totalChange: diff.reduce((s, x) => s + x, 0), index: direct > 1e-12 ? spill / direct : 0, diff };
+  });
+}
+function shockRecovery(W, a, alpha, Rstar, i, p) {
+  const sa = a.slice(); sa[i] = clip01(a[i] * (1 + p.shockPct / 100));
+  let R = Rstar.slice(); const air = [mean(R)], own = [R[i]];
+  for (let t = 1; t <= p.horizon; t++) {
+    const anc = t <= p.shockDur ? sa : a, imp = WTx(W, R);
+    R = anc.map((x, k) => (1 - alpha) * x + alpha * imp[k]); air.push(mean(R)); own.push(R[i]);
+  }
+  const base = air[0], minIdx = argmin(air), min = air[minIdx], impact = base - min;
+  const target = min + (p.recoveryPct / 100) * impact;
+  let rec = null;
+  if (impact <= 1e-15) rec = 0;
+  else for (let t = p.shockDur + 1; t < air.length; t++) if (air[t] >= target) { rec = t - p.shockDur; break; }
+  const completeness = impact > 1e-15 ? clip01((air[air.length - 1] - min) / impact) : 1;
+  return { i, factor: FACTORS[i], dim: DIM_OF[i], anchorShock: sa[i], base, min, minT: minIdx, impact, target,
+           recovery: rec, recoveryAbs: rec === null ? null : rec + p.shockDur, completeness,
+           ownMinDrop: Rstar[i] - Math.min(...own), air, own, final: air[air.length - 1] };
+}
+function networkStats(A) {
+  let nz = 0; for (let i = 0; i < N_F; i++) for (let j = i + 1; j < N_F; j++) if (A[i][j] > 0) nz++;
+  const pairs = N_F * (N_F - 1) / 2; return { nonZeroPairs: nz, pairs, density: nz / pairs };
+}
+
+/* ---------- full model ---------- */
+function runModel(X, P) {
+  P = Object.assign({}, DEFAULTS, P);
+  const { means, a } = intrinsic(X);
+  const A = coEndorsement(X, P.tau), { W, dangling, rowTotals } = influenceMatrix(A);
+  const net = networkStats(A);
+  const edges = []; W.forEach((row, i) => row.forEach((w, j) => { if (i !== j && w > 0) edges.push({ s: i, t: j, w, a: A[i][j] }); }));
+  // "empirical" directed edges exclude uniform weights imputed for dangling rows
+  const empiricalEdges = edges.filter(e => !dangling.includes(e.s));
+  let maxPair = { i: 0, j: 1, v: -1 }; for (let i = 0; i < N_F; i++) for (let j = i + 1; j < N_F; j++) if (A[i][j] > maxPair.v) maxPair = { i, j, v: A[i][j] };
+  const pr = folksonomyRank(X, P.d);
+  const Rstar = equilibrium(W, a, P.alpha);
+  const prop = propagate(W, a, P.alpha, P.maxIter, P.tol, P.stable);
+  const change = Rstar.map((x, i) => x - a[i]);
+  const dims = DIMENSIONS.map((D, k) => ({ k, name: D.name, R0: mean(D.idx.map(i => a[i])), Rs: mean(D.idx.map(i => Rstar[i])) }));
+  dims.forEach(d => { d.change = d.Rs - d.R0; });
+  const dr = ranksDesc(dims.map(d => d.Rs)); dims.forEach((d, k) => { d.rank = dr[k]; d.rankR0 = ranksDesc(dims.map(x => x.R0))[k]; });
+  const amp = amplification(W, a, P.alpha, P.ampPct, Rstar);
+  const res = FACTORS.map((_, i) => shockRecovery(W, a, P.alpha, Rstar, i, P));
+  // row-stochastic checks
+  const rowSumErr = Math.max(...W.map(r => Math.abs(r.reduce((s, x) => s + x, 0) - 1)));
+  let symErr = 0; for (let i = 0; i < N_F; i++) for (let j = 0; j < N_F; j++) symErr = Math.max(symErr, Math.abs(A[i][j] - A[j][i]));
+  return {
+    P, N: X.length, means, a, A, W, dangling, rowTotals, net, edges, empiricalEdges, maxPair,
+    pr: pr.p, prIterations: pr.iterations, C: pr.C, Rstar, prop, change, dims, amp, res,
+    overallR0: mean(a), overallRs: mean(Rstar), overallChange: mean(Rstar) - mean(a),
+    checks: { rowSumErr, symErr, iterVsClosed: Math.max(...prop.final.map((x, i) => Math.abs(x - Rstar[i]))),
+              meanInvariance: Math.abs(mean(Rstar) - mean(a)) }
+  };
+}
+
+/* ---------- sensitivity ---------- */
+const ALPHA_GRID = [0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95];
+const TAU_GRID = [2, 3, 4, 5];
+const D_GRID = [0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95];
+function sensitivity(X, M) {
+  const a = M.a, W = M.W, base = M.Rstar, P = M.P;
+  const alpha = ALPHA_GRID.map(al => {
+    const R = equilibrium(W, a, al), dv = R.map((x, i) => x - a[i]);
+    return { alpha: al, sd: sdPop(R), range: Math.max(...R) - Math.min(...R), maxPos: Math.max(...dv), maxPosF: argmax(dv),
+             maxNeg: Math.min(...dv), maxNegF: argmin(dv), bottom: argmin(R), bottomV: Math.min(...R), top: argmax(R), rho: spearman(R, base) };
+  });
+  const cache = {};
+  const netFor = tau => cache[tau] || (cache[tau] = (() => { const A = coEndorsement(X, tau); const im = influenceMatrix(A); return { A, W: im.W, dangling: im.dangling, net: networkStats(A) }; })());
+  const tau = TAU_GRID.map(t => {
+    const n = netFor(t), R = equilibrium(n.W, a, P.alpha);
+    return { tau: t, nz: n.net.nonZeroPairs, density: n.net.density, dangling: n.dangling.length, top: argmax(R), bottom: argmin(R),
+             sd: sdPop(R), range: Math.max(...R) - Math.min(...R), rho: spearman(R, base) };
+  });
+  const d = D_GRID.map(dd => { const p = pageRank(M.C, dd).p; return { d: dd, top: argmax(p), topV: Math.max(...p), rho: spearman(p, M.pr) }; });
+  const heat = ALPHA_GRID.map(al => TAU_GRID.map(t => { const R = equilibrium(netFor(t).W, a, al); return { sd: sdPop(R), range: Math.max(...R) - Math.min(...R), rho: spearman(R, base) }; }));
+  return { alpha, tau, d, heat };
+}
+
+root.AIRPM = { FACTORS, FACTOR_INFO, DIMENSIONS, DIM_OF, DEFAULTS, ALPHA_GRID, TAU_GRID, D_GRID, loadDataset, runModel, sensitivity,
+  equilibrium, pageRank, folksonomyProjection, folksonomyRank, coEndorsement, influenceMatrix, propagate, shockRecovery, spearman, mean, sdPop, argmax, argmin, clip01, ranksDesc };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==========================================================================
+   AIRPM ENGINE EXTENSIONS — alternative networks,
+   measurement diagnostics and seeded respondent bootstrap. Pure functions.
+   ========================================================================== */
+(function (root) {
+'use strict';
+const E = root.AIRPM;
+const F = E.FACTORS, n = F.length;
+const zeros = k => Array(k).fill(0);
+
+/* ---------- alternative network constructions ---------- */
+function eqFromAssoc(C, a, alpha) {
+  const Cm = C.map((r, i) => r.map((v, j) => (i === j || !(v > 0) ? 0 : v)));
+  return E.equilibrium(E.influenceMatrix(Cm).W, a, alpha);
+}
+function altNetworks(X, Mdl) {
+  const N = X.length, tau = Mdl.P.tau, al = Mdl.P.alpha, a = Mdl.a, A = Mdl.A, R = Mdl.Rstar;
+  const nE = F.map((_, i) => X.filter(r => r[i] >= tau).length);
+  const mu = F.map((_, i) => E.mean(X.map(r => r[i]))), sd = F.map((_, i) => Math.sqrt(E.mean(X.map(r => (r[i] - mu[i]) ** 2))));
+  const corr = F.map((_, i) => F.map((_, j) => E.mean(X.map(r => (r[i] - mu[i]) * (r[j] - mu[j]))) / (sd[i] * sd[j] || 1)));
+  const Xs = X.map(r => r.map(v => (v - 1) / 4));
+  const nets = [
+    ['Jaccard-normalised co-endorsement', F.map((_, i) => F.map((_, j) => A[i][j] / (nE[i] + nE[j] - A[i][j] + 1e-12)))],
+    ['Lift-normalised co-endorsement', F.map((_, i) => F.map((_, j) => A[i][j] * N / (nE[i] * nE[j] + 1e-12)))],
+    ['Positive Pearson correlation', corr.map(r => r.map(v => Math.max(0, v)))],
+    ['Graded (fuzzy) co-endorsement', F.map((_, i) => F.map((_, j) => Xs.reduce((s, r) => s + Math.min(r[i], r[j]), 0)))]
+  ];
+  const out = [{ name: 'Raw co-endorsement (baseline)', R, rho: 1 }];
+  nets.forEach(([name, C]) => { const Ra = eqFromAssoc(C, a, al); out.push({ name, R: Ra, rho: E.spearman(Ra, R) }); });
+  out.forEach(o => { const dv = o.R.map((x, i) => x - a[i]); o.top = E.argmax(o.R); o.bottom = E.argmin(o.R); o.maxPos = E.argmax(dv); o.maxNeg = E.argmin(dv); o.dv = dv; o.sd = E.sdPop(o.R); });
+  return out;
+}
+
+/* ---------- measurement diagnostics ---------- */
+function jacobiEigen(S) {                      // eigenvalues of a symmetric matrix
+  const A = S.map(r => r.slice()), m = A.length;
+  for (let sweep = 0; sweep < 100; sweep++) {
+    let off = 0; for (let p = 0; p < m; p++) for (let q = p + 1; q < m; q++) off += A[p][q] ** 2;
+    if (off < 1e-22) break;
+    for (let p = 0; p < m; p++) for (let q = p + 1; q < m; q++) {
+      if (Math.abs(A[p][q]) < 1e-300) continue;
+      const th = (A[q][q] - A[p][p]) / (2 * A[p][q]), t = Math.sign(th || 1) / (Math.abs(th) + Math.sqrt(th * th + 1)), c = 1 / Math.sqrt(t * t + 1), s = t * c;
+      for (let k = 0; k < m; k++) { const akp = A[k][p], akq = A[k][q]; A[k][p] = c * akp - s * akq; A[k][q] = s * akp + c * akq; }
+      for (let k = 0; k < m; k++) { const apk = A[p][k], aqk = A[q][k]; A[p][k] = c * apk - s * aqk; A[q][k] = s * apk + c * aqk; }
+    }
+  }
+  return A.map((r, i) => r[i]).sort((x, y) => y - x);
+}
+function diagnostics(X) {
+  const N = X.length, k = n, varS = v => { const m = E.mean(v); return v.reduce((s, x) => s + (x - m) ** 2, 0) / (v.length - 1); };
+  const cols = F.map((_, i) => X.map(r => r[i])), s2 = cols.map(varS), tot = X.map(r => r.reduce((s, x) => s + x, 0));
+  const cronbach = k / (k - 1) * (1 - s2.reduce((s, x) => s + x, 0) / varS(tot));
+  const sigmaEU = (5 * 5 - 1) / 12;              // uniform null for a 5-point scale = 2
+  const rwg = s2.map(v => 1 - v / sigmaEU), sbar = E.mean(s2);
+  const rwgj = k * (1 - sbar / sigmaEU) / (k * (1 - sbar / sigmaEU) + sbar / sigmaEU);
+  const mu = cols.map(E.mean), sd = cols.map(c => Math.sqrt(varS(c)));
+  const R = F.map((_, i) => F.map((_, j) => cols[i].reduce((s, x, r) => s + (x - mu[i]) * (cols[j][r] - mu[j]), 0) / ((N - 1) * sd[i] * sd[j])));
+  const ev = jacobiEigen(R), evSum = ev.reduce((s, x) => s + x, 0);
+  const itemTotal = F.map((_, i) => { const rest = X.map(r => r.reduce((s, x) => s + x, 0) - r[i]); const mr = E.mean(rest), mi = mu[i];
+    const cov = cols[i].reduce((s, x, r) => s + (x - mi) * (rest[r] - mr), 0); return cov / Math.sqrt(cols[i].reduce((s, x) => s + (x - mi) ** 2, 0) * rest.reduce((s, x) => s + (x - mr) ** 2, 0)); });
+  return { cronbach, rwg, rwgMean: E.mean(rwg), rwgj, eigen: ev, pc1Share: ev[0] / evSum, nEigGt1: ev.filter(x => x > 1).length, itemTotal, sd };
+}
+
+/* ---------- seeded respondent bootstrap ---------- */
+function mulberry32(seed) { return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function pct(sorted, q) { const h = (sorted.length - 1) * q, lo = Math.floor(h), hi = Math.ceil(h); return sorted[lo] + (sorted[hi] - sorted[lo]) * (h - lo); }   // numpy "linear"
+function ordinalRanks(v) { const o = v.map((x, i) => [x, i]).sort((p, q) => q[0] - p[0] || p[1] - q[1]); const r = zeros(v.length); o.forEach(([, i], k) => { r[i] = k + 1; }); return r; }
+function bootstrap(X, Mdl, Bn = 2000, seed = 20260925) {
+  const N = X.length, P = Mdl.P, rng = mulberry32(seed);
+  const Rb = [], ab = [], prb = [], nz = [], rhos = [];
+  for (let b = 0; b < Bn; b++) {
+    const Xb = Array.from({ length: N }, () => X[Math.floor(rng() * N)]);
+    const a = F.map((_, i) => (E.mean(Xb.map(r => r[i])) - 1) / 4), A = E.coEndorsement(Xb, P.tau), W = E.influenceMatrix(A).W;
+    const R = E.equilibrium(W, a, P.alpha); Rb.push(R); ab.push(a); prb.push(E.pageRank(E.folksonomyProjection(Xb), P.d, 1e-12, 10000).p);
+    let c = 0; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (A[i][j] > 0) c++; nz.push(c); rhos.push(E.spearman(R, Mdl.Rstar));
+  }
+  const rk = Rb.map(ordinalRanks), prk = prb.map(ordinalRanks);
+  const factors = F.map((f, i) => {
+    const Rs = Rb.map(r => r[i]).sort((x, y) => x - y), ch = Rb.map((r, b) => r[i] - ab[b][i]), chs = ch.slice().sort((x, y) => x - y), ranks = rk.map(r => r[i]).sort((x, y) => x - y);
+    return { R_lo: pct(Rs, 0.025), R_hi: pct(Rs, 0.975), ch_lo: pct(chs, 0.025), ch_hi: pct(chs, 0.975), pChPos: ch.filter(x => x > 0).length / Bn,
+             rank_lo: Math.round(pct(ranks, 0.025)), rank_hi: Math.round(pct(ranks, 0.975)), pTop: rk.filter(r => r[i] === 1).length / Bn,
+             pBottom: rk.filter(r => r[i] === n).length / Bn, pPrTop: prk.filter(r => r[i] === 1).length / Bn };
+  });
+  const rs = rhos.slice().sort((x, y) => x - y);
+  return { B: Bn, seed, factors, nzMin: Math.min(...nz), nzMax: Math.max(...nz), nzMean: E.mean(nz), rhoMedian: pct(rs, 0.5), rhoP05: pct(rs, 0.05),
+           params: { tau: P.tau, alpha: P.alpha, d: P.d } };
+}
+
+Object.assign(E, { altNetworks, diagnostics, bootstrap, mulberry32 });
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==========================================================================
+   AIRPM CHARTS — pure SVG string builders (read model results, never compute them)
+   ========================================================================== */
+(function (root) {
+'use strict';
+const E = root.AIRPM;
+const F = E.FACTORS, DIM = E.DIMENSIONS, DOF = E.DIM_OF;
+const DIM_COLORS = ['#0b6fb5', '#d98a00', '#138a68', '#b0508f', '#c4471b'];
+const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+const INK = '#1d2433', MUTED = '#667085', GRID = '#e8ebf0', AXIS = '#98a2b3', POS = '#177245', NEG = '#b42318';
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const f2 = x => (x * 100).toFixed(2), pp = x => (x >= 0 ? '+' : '−') + Math.abs(x * 100).toFixed(2) + ' pp';
+const r1 = x => Math.round(x * 10) / 10;
+
+function svg(w, h, body, id) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" ${id ? `id="${id}"` : ''} viewBox="0 0 ${w} ${h}" width="100%" font-family="${FONT}" role="img" style="display:block;max-width:${w}px;margin:auto">` +
+    `<rect width="${w}" height="${h}" fill="#ffffff"/>${body}</svg>`;
+}
+const text = (x, y, s, o = {}) => `<text x="${r1(x)}" y="${r1(y)}" font-size="${o.size || 12}" fill="${o.fill || INK}" text-anchor="${o.anchor || 'start'}"${o.weight ? ` font-weight="${o.weight}"` : ''}${o.rotate ? ` transform="rotate(${o.rotate} ${r1(x)} ${r1(y)})"` : ''}${o.extra || ''}>${esc(s)}</text>`;
+const line = (x1, y1, x2, y2, stroke = GRID, w = 1, extra = '') => `<line x1="${r1(x1)}" y1="${r1(y1)}" x2="${r1(x2)}" y2="${r1(y2)}" stroke="${stroke}" stroke-width="${w}"${extra}/>`;
+function niceTicks(lo, hi, n = 5) {
+  const span = hi - lo || 1, step0 = span / n, mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(12));
+  return out;
+}
+function dimLegend(x, y, dims = [0, 1, 2, 3, 4], gap = 150) {
+  return dims.map((k, n) => `<circle cx="${x + n * gap}" cy="${y - 4}" r="5" fill="${DIM_COLORS[k]}"/>` + text(x + n * gap + 10, y, DIM[k].name, { size: 11 })).join('');
+}
+function title(w, s, sub) {
+  return text(20, 26, s, { size: 15, weight: 700 }) + (sub ? text(20, 44, sub, { size: 11.5, fill: MUTED }) : '');
+}
+
+/* ---------------- Figure 1: directed influence network ---------------- */
+function edgeSet(M, opts) {
+  const all = M.empiricalEdges;
+  let shown = all, label = `Full empirical network: ${all.length} non-zero directed relationships`, filtered = false;
+  if (opts.mode === 'top') {
+    shown = []; for (let i = 0; i < F.length; i++) shown.push(...all.filter(e => e.s === i).sort((a, b) => b.w - a.w).slice(0, opts.k));
+    label = `Visualization filter: Top ${opts.k} of the full empirical network (${shown.length} of ${all.length} directed relationships shown; calculations use all ${all.length})`; filtered = true;
+  } else if (opts.mode === 'ego' && opts.focus != null) {
+    const out = all.filter(e => e.s === opts.focus).sort((a, b) => b.w - a.w), inn = all.filter(e => e.t === opts.focus).sort((a, b) => b.w - a.w);
+    const k = opts.egoK || 5; shown = out.slice(0, k).concat(inn.slice(0, k));
+    label = `Ego / focus view of ${F[opts.focus]}: strongest ${Math.min(k, out.length)} outgoing and ${Math.min(k, inn.length)} incoming relationships (visualization filter of the full ${all.length}-edge network)`; filtered = true;
+  }
+  if (opts.dim != null && opts.dim >= 0) {
+    shown = shown.filter(e => DOF[e.s] === opts.dim || DOF[e.t] === opts.dim);
+    label += ` · dimension filter: edges touching ${DIM[opts.dim].name} (${shown.length} shown)`; filtered = true;
+  }
+  return { shown, label, filtered, total: all.length };
+}
+function networkLayout(W, H, R) {
+  const gap = 1.1, slots = F.length + DIM.length * gap, cx = W / 2, cy = H / 2; let s = 0; const pos = [];
+  DIM.forEach(D => { D.idx.forEach(i => { const ang = -Math.PI / 2 + 2 * Math.PI * (s + gap / 2) / slots; pos[i] = { x: cx + R * Math.cos(ang), y: cy + R * Math.sin(ang), ang }; s++; }); s += gap; });
+  return { pos, cx, cy };
+}
+function figNetwork(M, opts) {
+  const W = opts.width || 1000, H = opts.height || 860, R = opts.radius || 300;
+  const top = opts.titleText ? 60 : 0;
+  const { pos, cx, cy } = networkLayout(W, H - top - 70, R); pos.forEach(p => { p.y += top; });
+  const es = edgeSet(M, opts), maxW = Math.max(...M.empiricalEdges.map(e => e.w), 1e-9);
+  const eqMax = Math.max(...M.Rstar, 1e-9), nodeR = i => 9 + 17 * Math.sqrt(Math.max(0, M.Rstar[i]) / eqMax);
+  const full = !es.filtered && opts.mode === 'all';
+  const showLabels = opts.labels && (opts.mode !== 'all');
+  let defs = '<defs>';
+  DIM_COLORS.concat(['#475467', '#111827']).forEach((c, k) => { defs += `<marker id="ah${k}${opts.uid || ''}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${full ? 4.5 : 7}" markerHeight="${full ? 4.5 : 7}" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" fill="${c}" fill-opacity="${full ? 0.35 : 0.9}"/></marker>`; });
+  defs += '</defs>';
+  let body = defs;
+  if (opts.titleText) body += title(W, opts.titleText, opts.subText);
+  body += `<g class="vp">`;
+  // dimension arcs
+  DIM.forEach((D, k) => {
+    const a0 = pos[D.idx[0]].ang - 0.2, a1 = pos[D.idx[D.idx.length - 1]].ang + 0.2, rr = R;
+    body += `<path d="M${r1(cx + rr * Math.cos(a0))},${r1(cy + top + rr * Math.sin(a0))} A${rr},${rr} 0 0 1 ${r1(cx + rr * Math.cos(a1))},${r1(cy + top + rr * Math.sin(a1))}" fill="none" stroke="${DIM_COLORS[k]}" stroke-opacity="0.18" stroke-width="30" stroke-linecap="round"/>`;
+  });
+  const curve = e => {
+    const p = pos[e.s], q = pos[e.t], dx = q.x - p.x, dy = q.y - p.y, L = Math.hypot(dx, dy);
+    const nx = -dy / L, ny = dx / L, bend = 0.13 * L;
+    const mx = (p.x + q.x) / 2 + nx * bend, my = (p.y + q.y) / 2 + ny * bend;
+    const u1 = Math.hypot(mx - p.x, my - p.y), u2 = Math.hypot(q.x - mx, q.y - my);
+    const sx = p.x + (mx - p.x) / u1 * (nodeR(e.s) + 1), sy = p.y + (my - p.y) / u1 * (nodeR(e.s) + 1);
+    const tx = q.x - (q.x - mx) / u2 * (nodeR(e.t) + 2), ty = q.y - (q.y - my) / u2 * (nodeR(e.t) + 2);
+    return { d: `M${r1(sx)},${r1(sy)} Q${r1(mx)},${r1(my)} ${r1(tx)},${r1(ty)}`, lx: 0.36 * sx + 0.48 * mx + 0.16 * tx, ly: 0.36 * sy + 0.48 * my + 0.16 * ty };
+  };
+  const hl = opts.highlight; // factor index to emphasise
+  const sorted = es.shown.slice().sort((a, b) => a.w - b.w);
+  let edgesSvg = '', hits = '', labels = '';
+  sorted.forEach(e => {
+    const c = curve(e), inc = hl != null && (e.s === hl || e.t === hl), dim = hl != null && !inc;
+    const width = full ? 0.25 + 1.6 * e.w / maxW : 0.6 + 2.6 * e.w / maxW;
+    const op = dim ? 0.04 : inc ? 0.85 : full ? 0.22 : 0.6;
+    const col = DIM_COLORS[DOF[e.s]], mk = `ah${DOF[e.s]}${opts.uid || ''}`;
+    const tip = `${F[e.s]} → ${F[e.t]}|w = ${e.w.toFixed(4)} (a = ${e.a}, row total ${M.rowTotals[e.s]})|reverse ${F[e.t]} → ${F[e.s]}: w = ${M.W[e.t][e.s].toFixed(4)}`;
+    edgesSvg += `<path d="${c.d}" fill="none" stroke="${col}" stroke-width="${width.toFixed(2)}" stroke-opacity="${op}" marker-end="url(#${mk})" data-e="${e.s}-${e.t}" pointer-events="none"/>`;
+    if (opts.interactive) hits += `<path d="${c.d}" fill="none" stroke="transparent" stroke-width="7" data-e="${e.s}-${e.t}" data-tip="${esc(tip)}" class="hit"/>`;
+    if (showLabels && !dim) labels += `<text x="${r1(c.lx)}" y="${r1(c.ly + 3)}" font-size="9.5" text-anchor="middle" fill="${INK}" stroke="#fff" stroke-width="3" paint-order="stroke" pointer-events="none">${e.w.toFixed(3)}</text>`;
+  });
+  body += `<g>${edgesSvg}</g><g>${hits}</g><g>${labels}</g>`;
+  // nodes
+  F.forEach((f, i) => {
+    const p = pos[i], r = nodeR(i), faded = (opts.dim >= 0 && opts.dim != null && DOF[i] !== opts.dim) || (hl != null && hl !== i && !es.shown.some(e => (e.s === hl && e.t === i) || (e.t === hl && e.s === i)));
+    const ca = Math.cos(p.ang), sa = Math.sin(p.ang), lr = r + 10;
+    const anchor = Math.abs(ca) < 0.25 ? 'middle' : ca > 0 ? 'start' : 'end';
+    const ly = p.y + sa * lr + (Math.abs(ca) < 0.25 ? (sa > 0 ? 10 : -2) : 4);
+    const tip = `${f} (${DIM[DOF[i]].name})|Equilibrium ${f2(M.Rstar[i])}% · Intrinsic ${f2(M.a[i])}%|ARR ${M.pr[i].toFixed(5)}`;
+    body += `<g data-n="${i}" ${opts.interactive ? `data-tip="${esc(tip)}" style="cursor:pointer"` : ''} opacity="${faded ? 0.3 : 1}">` +
+      `<circle cx="${r1(p.x)}" cy="${r1(p.y)}" r="${r1(r)}" fill="${DIM_COLORS[DOF[i]]}" fill-opacity="0.92" stroke="${hl === i ? '#111827' : '#fff'}" stroke-width="${hl === i ? 3 : 1.5}"/>` +
+      `<text x="${r1(p.x + ca * lr)}" y="${r1(ly)}" font-size="13" font-weight="600" text-anchor="${anchor}" fill="${INK}" stroke="#fff" stroke-width="3.5" paint-order="stroke">${esc(f)}</text></g>`;
+  });
+  body += '</g>';
+  // legend
+  const ly = H - 46;
+  body += dimLegend(24, ly, [0, 1, 2, 3, 4], 165);
+  body += text(24, ly + 24, 'Node area ∝ equilibrium readiness R*ᵢ · edge width ∝ wᵢⱼ · colour = source dimension · arrows point i → j', { size: 11, fill: MUTED });
+  if (opts.caption !== false) body += text(W - 20, ly + 24, es.label.length > 95 ? '' : es.label, { size: 11, fill: MUTED, anchor: 'end' });
+  return { svg: svg(W, H, body, opts.id), edges: es };
+}
+
+/* ---------------- Figure 2: propagation & convergence ---------------- */
+function figPropagation(M, o = {}) {
+  const W = o.width || 1000, H = o.height || 440, pr = M.prop, sc = pr.systemConv;
+  const tMax = Math.min(M.P.maxIter, Math.max((sc || M.P.maxIter) + 10, Math.min(20, M.P.maxIter)));
+  const traj = pr.traj.slice(0, tMax + 1);
+  let b = title(W, o.titleText || 'Readiness propagation and convergence', `α = ${M.P.alpha}, τ = ${M.P.tau}; iterations 0–${tMax} shown of max ${M.P.maxIter}`);
+  // panel A
+  const L = 70, T = 70, pw = W / 2 - 110, ph = H - T - 90;
+  const vals = traj.flat(); let lo = Math.min(...vals), hi = Math.max(...vals); const pad = (hi - lo) * 0.06 || 0.02; lo -= pad; hi += pad;
+  const sx = t => L + pw * t / (tMax || 1), sy = v => T + ph * (1 - (v - lo) / (hi - lo));
+  niceTicks(lo, hi, 6).forEach(v => { b += line(L, sy(v), L + pw, sy(v)) + text(L - 8, sy(v) + 4, (v * 100).toFixed(0) + '%', { size: 11, fill: MUTED, anchor: 'end' }); });
+  niceTicks(0, tMax, 6).filter(t => Number.isInteger(t)).forEach(t => { b += text(sx(t), T + ph + 18, t, { size: 11, fill: MUTED, anchor: 'middle' }); });
+  b += line(L, T + ph, L + pw, T + ph, AXIS) + line(L, T, L, T + ph, AXIS);
+  F.forEach((f, i) => {
+    if (o.dim != null && o.dim >= 0 && DOF[i] !== o.dim) return;
+    const pts = traj.map((R, t) => `${r1(sx(t))},${r1(sy(R[i]))}`).join(' ');
+    b += `<polyline points="${pts}" fill="none" stroke="${DIM_COLORS[DOF[i]]}" stroke-width="1.3" stroke-opacity="0.8" data-tip="${esc(`${f}|R(0) = ${f2(traj[0][i])}% → R(${tMax}) = ${f2(traj[tMax][i])}%`)}"/>`;
+  });
+  const air = pr.air.slice(0, tMax + 1);
+  b += `<polyline points="${air.map((v, t) => `${r1(sx(t))},${r1(sy(v))}`).join(' ')}" fill="none" stroke="#111827" stroke-width="2.6" data-tip="${esc(`Overall AIR(t)|AIR(0) = ${f2(air[0])}% · AIR(${tMax}) = ${f2(air[tMax])}%`)}"/>`;
+  b += text(L + pw, sy(air[tMax]) - 7, `AIR(t) = ${f2(air[tMax])}%`, { size: 11, weight: 700, anchor: 'end' });
+  b += text(L + pw / 2, T + ph + 38, 'Iteration t', { size: 12, anchor: 'middle', weight: 600 });
+  b += text(18, T + ph / 2, 'Readiness Rᵢ(t)', { size: 12, anchor: 'middle', weight: 600, rotate: -90 });
+  b += text(L, T - 10, '(a) Factor trajectories Rᵢ(t) and overall AIR(t)', { size: 12, weight: 700 });
+  // panel B
+  const L2 = W / 2 + 60, pw2 = W - L2 - 30;
+  const md = pr.maxDelta.slice(1, tMax + 1).map(v => Math.max(v, 1e-17));
+  const lmin = Math.floor(Math.log10(Math.min(...md, M.P.tol))) - 0.2, lmax = Math.ceil(Math.log10(Math.max(...md))) + 0.2;
+  const sx2 = t => L2 + pw2 * (t - 1) / Math.max(1, tMax - 1), sy2 = v => T + ph * (1 - (Math.log10(v) - lmin) / (lmax - lmin));
+  for (let e = Math.ceil(lmin); e <= Math.floor(lmax); e += Math.max(1, Math.ceil((lmax - lmin) / 7))) b += line(L2, sy2(10 ** e), L2 + pw2, sy2(10 ** e)) + text(L2 - 8, sy2(10 ** e) + 4, `1e${e}`, { size: 11, fill: MUTED, anchor: 'end' });
+  niceTicks(1, tMax, 6).filter(t => Number.isInteger(t) && t >= 1).forEach(t => { b += text(sx2(t), T + ph + 18, t, { size: 11, fill: MUTED, anchor: 'middle' }); });
+  b += line(L2, T + ph, L2 + pw2, T + ph, AXIS) + line(L2, T, L2, T + ph, AXIS);
+  b += line(L2, sy2(M.P.tol), L2 + pw2, sy2(M.P.tol), NEG, 1.2, ' stroke-dasharray="6 4"') + text(L2 + pw2, sy2(M.P.tol) - 6, `tolerance ${M.P.tol.toExponential(0)}`, { size: 11, fill: NEG, anchor: 'end' });
+  b += `<polyline points="${md.map((v, k) => `${r1(sx2(k + 1))},${r1(sy2(v))}`).join(' ')}" fill="none" stroke="#111827" stroke-width="2"/>`;
+  md.forEach((v, k) => { b += `<circle cx="${r1(sx2(k + 1))}" cy="${r1(sy2(v))}" r="2.6" fill="#111827" data-tip="${esc(`t = ${k + 1}|max |Rᵢ(t) − Rᵢ(t−1)| = ${v.toExponential(3)}`)}"/>`; });
+  if (sc && sc <= tMax) b += line(sx2(sc), T, sx2(sc), T + ph, POS, 1.5, ' stroke-dasharray="4 3"') + text(sx2(sc) + 5, T + 14, `system convergence t = ${sc}`, { size: 11, fill: POS, weight: 700 });
+  else b += text(L2 + pw2, T + 14, `System convergence not reached within ${M.P.maxIter} iterations`, { size: 11, fill: NEG, weight: 700, anchor: 'end' });
+  b += text(L2 + pw2 / 2, T + ph + 38, 'Iteration t', { size: 12, anchor: 'middle', weight: 600 });
+  b += text(L2 - 52, T + ph / 2, 'max |ΔRᵢ| (log scale)', { size: 12, anchor: 'middle', weight: 600, rotate: -90 });
+  b += text(L2, T - 10, `(b) Convergence: ${M.P.stable} consecutive iterations below tolerance`, { size: 12, weight: 700 });
+  b += dimLegend(L, H - 14, [0, 1, 2, 3, 4], 150) + `<line x1="${L + 760}" y1="${H - 18}" x2="${L + 785}" y2="${H - 18}" stroke="#111827" stroke-width="2.6"/>` + text(L + 790, H - 14, 'AIR(t)', { size: 11 });
+  return svg(W, H, b, o.id);
+}
+
+/* ---------------- Figure 3: intrinsic vs equilibrium ---------------- */
+function figDumbbell(M, o = {}) {
+  let idx = F.map((_, i) => i).filter(i => o.dim == null || o.dim < 0 || DOF[i] === o.dim).sort((a, b) => M.Rstar[b] - M.Rstar[a]);
+  const W = o.width || 1000, rowH = 26, T = 78, H = T + idx.length * rowH + 70, L = 190, Rr = 120, pw = W - L - Rr;
+  const ci = o.ci || null, ext = i => (ci ? [ci[i].R_lo, ci[i].R_hi] : []);
+  const hi = Math.ceil(Math.max(...idx.map(i => Math.max(M.a[i], M.Rstar[i], ...ext(i)))) * 10 + 0.5) / 10, lo = Math.max(0, Math.floor(Math.min(...idx.map(i => Math.min(M.a[i], M.Rstar[i], ...ext(i)))) * 10 - 0.5) / 10);
+  const sx = v => L + pw * (v - lo) / (hi - lo);
+  let b = title(W, o.titleText || 'Intrinsic vs. equilibrium readiness', `Sorted by equilibrium readiness R*ᵢ; α = ${M.P.alpha}, τ = ${M.P.tau}`);
+  niceTicks(lo, hi, 8).forEach(v => { b += line(sx(v), T - 8, sx(v), T + idx.length * rowH, GRID) + text(sx(v), T + idx.length * rowH + 16, (v * 100).toFixed(0) + '%', { size: 11, fill: MUTED, anchor: 'middle' }); });
+  b += line(sx(M.overallR0), T - 8, sx(M.overallR0), T + idx.length * rowH, '#667085', 1, ' stroke-dasharray="3 3"') + text(sx(M.overallR0), T - 12, `overall mean ${f2(M.overallR0)}%`, { size: 10.5, fill: MUTED, anchor: 'middle' });
+  idx.forEach((i, k) => {
+    const y = T + k * rowH + rowH / 2, d = M.Rstar[i] - M.a[i], c = d >= 0 ? POS : NEG;
+    b += `<g data-tip="${esc(`${F[i]} (${DIM[DOF[i]].name})|Intrinsic ${f2(M.a[i])}% → Equilibrium ${f2(M.Rstar[i])}%|Change ${pp(d)}${ci ? ` · 95% CI of R* [${f2(ci[i].R_lo)}, ${f2(ci[i].R_hi)}]%` : ''}`)}">`;
+    b += `<rect x="0" y="${y - rowH / 2}" width="${W}" height="${rowH}" fill="${k % 2 ? '#fafbfc' : '#fff'}"/>`;
+    b += `<rect x="${L - 178}" y="${y - 5}" width="9" height="9" fill="${DIM_COLORS[DOF[i]]}"/>` + text(L - 12, y + 4, F[i], { size: 12, anchor: 'end' });
+    if (ci) b += `<rect x="${r1(sx(ci[i].R_lo))}" y="${y - 4}" width="${r1(sx(ci[i].R_hi) - sx(ci[i].R_lo))}" height="8" fill="#c9cfd8" fill-opacity="0.75"/>`;
+    b += line(sx(M.a[i]), y, sx(M.Rstar[i]), y, c, 2.2);
+    b += `<circle cx="${r1(sx(M.a[i]))}" cy="${y}" r="5" fill="#fff" stroke="#475467" stroke-width="1.8"/><circle cx="${r1(sx(M.Rstar[i]))}" cy="${y}" r="5.5" fill="${DIM_COLORS[DOF[i]]}" stroke="#fff" stroke-width="1"/>`;
+    b += text(W - Rr + 14, y + 4, pp(d), { size: 11.5, fill: c, weight: 600 }) + '</g>';
+  });
+  b += text(L + pw / 2, T + idx.length * rowH + 36, 'Readiness (0–1 scale, shown as %)', { size: 12, anchor: 'middle', weight: 600 });
+  const ly = H - 12;
+  b += `<circle cx="${L}" cy="${ly - 4}" r="5" fill="#fff" stroke="#475467" stroke-width="1.8"/>` + text(L + 10, ly, 'Intrinsic Rᵢ(0)', { size: 11 }) +
+    `<circle cx="${L + 120}" cy="${ly - 4}" r="5.5" fill="#475467"/>` + text(L + 130, ly, 'Equilibrium R*ᵢ (colour = dimension)', { size: 11 }) +
+    line(L + 370, ly - 4, L + 395, ly - 4, POS, 2.2) + text(L + 400, ly, 'gain', { size: 11 }) + line(L + 440, ly - 4, L + 465, ly - 4, NEG, 2.2) + text(L + 470, ly, 'loss (redistribution)', { size: 11 }) +
+    (ci ? `<rect x="${L + 600}" y="${ly - 8}" width="26" height="8" fill="#c9cfd8"/>` + text(L + 632, ly, `95% bootstrap CI of R* (B = ${o.ciB})`, { size: 11 }) : '');
+  return svg(W, H, b, o.id);
+}
+
+/* ---------------- Figure 4: amplification ---------------- */
+function figAmplification(M, o = {}) {
+  const rows = M.amp.filter(z => o.dim == null || o.dim < 0 || z.dim === o.dim).slice().sort((a, b) => b.index - a.index);
+  const W = o.width || 1000, rowH = 24, T = 84, H = T + rows.length * rowH + 60, L = 165, gapMid = 60, pw = (W - L - 2 * 60 - gapMid) / 2;
+  const L2 = L + pw + gapMid + 60;
+  let b = title(W, o.titleText || 'Amplification index by factor', `Standardised +${M.P.ampPct}% relative improvement of one intrinsic anchor at a time; W held fixed (α = ${M.P.alpha})`);
+  const maxI = Math.max(...rows.map(z => z.index), 1e-9), maxS = Math.max(...rows.map(z => z.spill), 1e-9);
+  b += text(L, T - 14, '(a) Amplification index = positive spillover ÷ direct anchor change', { size: 11.5, weight: 700 });
+  b += text(L2, T - 14, '(b) Absolute positive spillover to other factors (pp)', { size: 11.5, weight: 700 });
+  rows.forEach((z, k) => {
+    const y = T + k * rowH, h = rowH * 0.62, c = DIM_COLORS[z.dim];
+    const tip = `${z.factor}|Direct anchor change ${pp(z.direct)} · own equilibrium change ${pp(z.ownChange)}|Positive spillover ${pp(z.spill)} across ${z.affected} factors · index ${z.index.toFixed(4)}`;
+    b += `<g data-tip="${esc(tip)}">` + text(L - 10, y + h * 0.8, z.factor, { size: 11.5, anchor: 'end' });
+    b += `<rect x="${L}" y="${y}" width="${r1(pw * z.index / maxI)}" height="${h}" fill="${c}" rx="2"/>` + text(L + pw * z.index / maxI + 5, y + h * 0.8, z.index.toFixed(3), { size: 10.5 });
+    b += `<rect x="${L2}" y="${y}" width="${r1(pw * z.spill / maxS)}" height="${h}" fill="${c}" fill-opacity="0.45" stroke="${c}" rx="2"/>` + text(L2 + pw * z.spill / maxS + 5, y + h * 0.8, (z.spill * 100).toFixed(2), { size: 10.5 }) + '</g>';
+  });
+  b += line(L, T - 4, L, T + rows.length * rowH, AXIS) + line(L2, T - 4, L2, T + rows.length * rowH, AXIS);
+  b += text(W / 2, H - 30, 'Both panels use the same factor order (sorted by amplification index); rank order by absolute spillover can differ.', { size: 11, fill: MUTED, anchor: 'middle' });
+  b += dimLegend(L, H - 10, [0, 1, 2, 3, 4], 150);
+  return svg(W, H, b, o.id);
+}
+
+/* ---------------- Figure 5: shock–recovery trajectory ---------------- */
+function figShock(M, i, o = {}) {
+  const z = M.res[i], P = M.P, W = o.width || 1000, H = o.height || 420, T = 70, L = 80, ph = H - T - 80, pw = W / 2 - 120, L2 = W / 2 + 60, pw2 = W - L2 - 40;
+  let b = title(W, o.titleText || `Shock–recovery trajectory: ${z.factor}`, `Shock ${P.shockPct}% to the intrinsic anchor of ${z.factor} for ${P.shockDur} iterations, then restored; horizon ${P.horizon}; recovery criterion ${P.recoveryPct}% of lost AIR`);
+  const panel = (x0, w, series, base, extraLines, lab, ylab) => {
+    let lo = Math.min(...series, ...extraLines), hi = Math.max(...series, ...extraLines); const pad = (hi - lo) * 0.15 || 0.002; lo -= pad; hi += pad;
+    const sx = t => x0 + w * t / P.horizon, sy = v => T + ph * (1 - (v - lo) / (hi - lo)); let s = '';
+    s += `<rect x="${r1(sx(0))}" y="${T}" width="${r1(sx(Math.min(P.shockDur, P.horizon)) - sx(0))}" height="${ph}" fill="#fde8e6" opacity="0.7"/>`;
+    niceTicks(lo, hi, 5).forEach(v => { s += line(x0, sy(v), x0 + w, sy(v)) + text(x0 - 8, sy(v) + 4, (v * 100).toFixed(2) + '%', { size: 10.5, fill: MUTED, anchor: 'end' }); });
+    niceTicks(0, P.horizon, 5).filter(Number.isInteger).forEach(t => { s += text(sx(t), T + ph + 17, t, { size: 10.5, fill: MUTED, anchor: 'middle' }); });
+    s += line(x0, T + ph, x0 + w, T + ph, AXIS) + line(x0, T, x0, T + ph, AXIS);
+    s += line(x0, sy(base), x0 + w, sy(base), '#667085', 1, ' stroke-dasharray="3 4"') + text(x0 + w, sy(base) - 5, `baseline ${f2(base)}%`, { size: 10.5, fill: MUTED, anchor: 'end' });
+    s += `<polyline points="${series.map((v, t) => `${r1(sx(t))},${r1(sy(v))}`).join(' ')}" fill="none" stroke="#0b3d91" stroke-width="2.2"/>`;
+    s += text(x0, T - 10, lab, { size: 12, weight: 700 }) + text(x0 + w / 2, T + ph + 36, 'Iteration t', { size: 12, anchor: 'middle', weight: 600 }) + text(x0 - 62, T + ph / 2, ylab, { size: 12, anchor: 'middle', weight: 600, rotate: -90 });
+    return { s, sx, sy };
+  };
+  const a = panel(L, pw, z.air, z.base, [z.target], '(a) Overall AI readiness AIR(t)', 'AIR(t)');
+  b += a.s + line(L, a.sy(z.target), L + pw, a.sy(z.target), POS, 1, ' stroke-dasharray="6 4"') + text(L + pw, a.sy(z.target) + 13, `${P.recoveryPct}% recovery level ${f2(z.target)}%`, { size: 10.5, fill: POS, anchor: 'end' });
+  b += `<circle cx="${r1(a.sx(z.minT))}" cy="${r1(a.sy(z.min))}" r="4" fill="${NEG}"/>` + text(a.sx(z.minT) + 6, a.sy(z.min) + 14, `min ${f2(z.min)}% (t = ${z.minT})`, { size: 10.5, fill: NEG });
+  if (z.recoveryAbs != null) b += `<circle cx="${r1(a.sx(z.recoveryAbs))}" cy="${r1(a.sy(z.air[z.recoveryAbs]))}" r="4" fill="${POS}"/>` + text(a.sx(z.recoveryAbs) + 6, a.sy(z.air[z.recoveryAbs]) + 14, `recovered +${z.recovery} it.`, { size: 10.5, fill: POS });
+  const bb = panel(L2, pw2, z.own, M.Rstar[i], [], `(b) Target factor readiness R(t): ${z.factor}`, `R(t) — ${z.factor}`);
+  b += bb.s;
+  b += `<rect x="${L}" y="${H - 22}" width="14" height="10" fill="#fde8e6"/>` + text(L + 20, H - 13, `shock window (t = 1–${P.shockDur})`, { size: 11 });
+  return svg(W, H, b, o.id);
+}
+
+/* ---------------- Figure 6: impact vs recovery ---------------- */
+function figImpactRecovery(M, o = {}) {
+  const W = o.width || 1000, H = o.height || 560, T = 70, L = 90, pw = W - L - 290, ph = H - T - 80, P = M.P;
+  const pts = M.res.map(z => ({ z, x: z.recovery, y: z.impact }));
+  const reached = pts.filter(p => p.x != null), notReached = pts.filter(p => p.x == null);
+  const xs = reached.map(p => p.x); let xlo = xs.length ? Math.min(...xs) : 0, xhi = xs.length ? Math.max(...xs) : 1;
+  if (xhi - xlo < 6) { xlo -= 3; xhi += 3; } else { const pd = (xhi - xlo) * 0.08; xlo -= pd; xhi += pd; } xlo = Math.max(0, xlo);
+  const ys = pts.map(p => p.y); let ylo = Math.min(...ys), yhi = Math.max(...ys); const pdy = (yhi - ylo) * 0.1 || yhi * 0.1 || 0.001; ylo = Math.max(0, ylo - pdy); yhi += pdy;
+  const sx = x => L + pw * (x - xlo) / (xhi - xlo), sy = y => T + ph * (1 - (y - ylo) / (yhi - ylo));
+  let b = title(W, o.titleText || 'Shock impact versus recovery time', `One-factor shocks of ${P.shockPct}% for ${P.shockDur} iterations; recovery = iterations after shock end to regain ${P.recoveryPct}% of lost AIR`);
+  niceTicks(ylo, yhi, 6).forEach(v => { b += line(L, sy(v), L + pw, sy(v)) + text(L - 8, sy(v) + 4, (v * 100).toFixed(2), { size: 11, fill: MUTED, anchor: 'end' }); });
+  niceTicks(xlo, xhi, 6).filter(Number.isInteger).forEach(x => { b += line(sx(x), T, sx(x), T + ph) + text(sx(x), T + ph + 18, x, { size: 11, fill: MUTED, anchor: 'middle' }); });
+  b += line(L, T + ph, L + pw, T + ph, AXIS) + line(L, T, L, T + ph, AXIS);
+  b += text(L + pw / 2, T + ph + 40, 'Recovery time (iterations after the shock ends)', { size: 12, anchor: 'middle', weight: 600 });
+  b += text(L - 60, T + ph / 2, 'System-level shock impact on AIR (pp)', { size: 12, anchor: 'middle', weight: 600, rotate: -90 });
+  // labels with greedy collision avoidance, placed in a column right of the points
+  const order = reached.slice().sort((a, b2) => sy(a.y) - sy(b2.y)); let lastY = -1e9;
+  const colX = Math.max(...reached.map(p => sx(p.x)), L) + 34;
+  order.forEach(p => {
+    const px = sx(p.x), py = sy(p.y), ly = Math.max(py, lastY + 14); lastY = ly;
+    const tip = `${p.z.factor}|Impact ${(p.y * 100).toFixed(3)} pp · min AIR ${f2(p.z.min)}%|Recovery ${p.x} iterations · completeness ${(p.z.completeness * 100).toFixed(2)}%`;
+    b += `<g data-tip="${esc(tip)}"><circle cx="${r1(px)}" cy="${r1(py)}" r="5" fill="${DIM_COLORS[p.z.dim]}" stroke="#fff"/>` + line(px + 5, py, colX - 3, ly - 4, '#c0c6d0', 0.8) + text(colX, ly, `${p.z.factor} (${(p.y * 100).toFixed(2)})`, { size: 10.5 }) + '</g>';
+  });
+  if (notReached.length) b += text(L + pw, T + 14, `Not reached within ${P.horizon - P.shockDur} post-shock iterations: ${notReached.map(p => p.z.factor).join(', ')}`, { size: 11, fill: NEG, anchor: 'end' });
+  const same = xs.length > 1 && xs.every(x => x === xs[0]);
+  if (same) b += text(L + 8, T + ph - 10, `All reached factors recover in ${xs[0]} iterations: a mathematical consequence of α = ${P.alpha} (αᵏ ≤ ${(1 - P.recoveryPct / 100).toFixed(2)}), not an empirical finding.`, { size: 10.5, fill: MUTED });
+  b += dimLegend(L, H - 10, [0, 1, 2, 3, 4], 150);
+  return svg(W, H, b, o.id);
+}
+
+/* ---------------- Scenario chart ---------------- */
+function figScenario(M, S, o = {}) {
+  const idx = F.map((_, i) => i), W = o.width || 1000, rowH = 22, T = 70, H = T + idx.length * rowH + 50, L = 165, pw = W - L - 90;
+  const vals = S.delta, m = Math.max(...vals.map(Math.abs), 1e-6), zero = L + pw / 2, sx = v => zero + (pw / 2) * v / m;
+  let b = title(W, 'Scenario effect on equilibrium readiness ΔRᵢ = R*ᵢ,s − R*ᵢ', 'Modelled scenario assumption — not observed causal evidence. W is held fixed.');
+  b += line(zero, T - 6, zero, T + idx.length * rowH, AXIS);
+  idx.forEach((i, k) => {
+    const y = T + k * rowH, v = vals[i], c = v >= 0 ? POS : NEG;
+    b += `<g data-tip="${esc(`${F[i]}|Baseline R* ${f2(M.Rstar[i])}% → scenario ${f2(S.Rs[i])}%|ΔR ${pp(v)}`)}">` + text(L - 10, y + 13, F[i], { size: 11.5, anchor: 'end' });
+    b += `<rect x="${r1(Math.min(zero, sx(v)))}" y="${y + 3}" width="${r1(Math.abs(sx(v) - zero))}" height="${rowH - 8}" fill="${c}" fill-opacity="0.75"/>`;
+    b += text(v >= 0 ? sx(v) + 5 : sx(v) - 5, y + 13, pp(v), { size: 10.5, anchor: v >= 0 ? 'start' : 'end', fill: c }) + '</g>';
+  });
+  return svg(W, H, b, o.id);
+}
+
+/* ---------------- Sensitivity heatmap ---------------- */
+function figHeatmap(M, S, metric, o = {}) {
+  const W = o.width || 760, cw = 120, ch = 38, L = 130, T = 80, H = T + E.ALPHA_GRID.length * ch + 70;
+  const vals = S.heat.flat().map(c => c[metric]).filter(isFinite), lo = Math.min(...vals), hi = Math.max(...vals);
+  const lab = { sd: 'SD of equilibrium readiness (pp)', range: 'Range of equilibrium readiness (pp)', rho: 'Spearman ρ vs. current equilibrium ranking' }[metric];
+  const fmt = v => (metric === 'rho' ? v.toFixed(3) : (v * 100).toFixed(2));
+  let b = title(W, `α × τ sensitivity: ${lab}`, 'Each cell re-estimates W at τ and recomputes R* at α; intrinsic anchors unchanged');
+  E.TAU_GRID.forEach((t, c) => { b += text(L + c * cw + cw / 2, T - 10, `τ = ${t}`, { size: 12, anchor: 'middle', weight: 700 }); });
+  E.ALPHA_GRID.forEach((al, r) => {
+    b += text(L - 12, T + r * ch + ch / 2 + 4, `α = ${al}`, { size: 12, anchor: 'end', weight: 700 });
+    E.TAU_GRID.forEach((t, c) => {
+      const v = S.heat[r][c][metric], u = hi > lo ? (v - lo) / (hi - lo) : 0.5;
+      const col = `rgb(${Math.round(240 - 200 * u)},${Math.round(245 - 150 * u)},${Math.round(255 - 110 * u)})`;
+      const cur = al === M.P.alpha && t === M.P.tau;
+      b += `<rect x="${L + c * cw}" y="${T + r * ch}" width="${cw - 2}" height="${ch - 2}" fill="${col}" stroke="${cur ? '#111827' : 'none'}" stroke-width="2"/>`;
+      b += text(L + c * cw + cw / 2, T + r * ch + ch / 2 + 4, isFinite(v) ? fmt(v) : '—', { size: 12, anchor: 'middle', fill: u > 0.55 ? '#fff' : INK });
+    });
+  });
+  b += text(L, H - 20, 'Outlined cell = current α and τ (if on grid). Darker = larger value.', { size: 11, fill: MUTED });
+  return svg(W, H, b, o.id);
+}
+
+/* ---------------- Bipartite respondent–factor graph ---------------- */
+function figBipartite(M, X, ids, o) {
+  const tau = M.P.tau, nShow = Math.min(o.limit, X.length), respIdx = Array.from({ length: nShow }, (_, r) => r);
+  const facIdx = F.map((_, i) => i).filter(i => o.dim < 0 || DOF[i] === o.dim);
+  const keep = v => v >= tau && (o.rating === 'all' || (o.rating === '4' && v === 4) || (o.rating === '5' && v === 5) || (o.rating === '45' && (v === 4 || v === 5)));
+  const W = 1000, T = 50, spR = nShow <= 10 ? 44 : nShow <= 30 ? 22 : 10, H = Math.max(T + nShow * spR + 40, T + facIdx.length * 30 + 90);
+  const xL = 190, xR = 760, ry = r => T + 10 + r * spR + (H - T - 40 - nShow * spR) / 2;
+  const gaps = new Set(); facIdx.forEach((i, k) => { if (k && DOF[i] !== DOF[facIdx[k - 1]]) gaps.add(k); });
+  const fsp = (H - T - 60) / (facIdx.length + gaps.size * 0.8); let acc = 0; const fy = {};
+  facIdx.forEach((i, k) => { if (gaps.has(k)) acc += 0.8; fy[i] = T + 20 + (k + acc) * fsp + fsp / 2; });
+  let edges = '', count = 0; const sel = o.sel || {};
+  respIdx.forEach(r => facIdx.forEach(i => {
+    const v = X[r][i]; if (!keep(v)) return; count++;
+    const on = (sel.r === r) || (sel.f === i), off = (sel.r != null || sel.f != null) && !on;
+    const y1 = ry(r), y2 = fy[i], mx = (xL + xR) / 2;
+    edges += `<path d="M${xL + 6},${r1(y1)} C${mx},${r1(y1)} ${mx},${r1(y2)} ${xR - 8},${r1(y2)}" fill="none" stroke="${DIM_COLORS[DOF[i]]}" stroke-width="${v >= 5 ? 0.8 : 0.4}" stroke-opacity="${off ? 0.04 : on ? 0.9 : 0.28}" data-tip="${esc(`${ids[r]} → ${F[i]}|Rating ${v}`)}" class="bp-e"/>`;
+  }));
+  let nodes = '';
+  respIdx.forEach(r => {
+    const act = sel.r === r, deg = F.reduce((s, _, i) => s + (X[r][i] >= tau ? 1 : 0), 0);
+    nodes += `<g data-r="${r}" style="cursor:pointer" data-tip="${esc(`${ids[r]}|${deg} factor(s) endorsed at τ = ${tau}`)}"><circle cx="${xL}" cy="${r1(ry(r))}" r="${nShow > 30 ? 3 : 5}" fill="${act ? '#111827' : '#667085'}"/>` +
+      (nShow <= 30 || act || r % 5 === 0 ? text(xL - 10, ry(r) + 3.5, ids[r], { size: nShow > 30 ? 8.5 : 11, anchor: 'end', fill: act ? INK : MUTED, weight: act ? 700 : null }) : '') + '</g>';
+  });
+  facIdx.forEach(i => {
+    const act = sel.f === i, deg = X.reduce((s, row) => s + (row[i] >= tau ? 1 : 0), 0);
+    nodes += `<g data-f="${i}" style="cursor:pointer" data-tip="${esc(`${F[i]} (${DIM[DOF[i]].name})|Endorsed by ${deg} of ${X.length} respondents (all data)`)}"><circle cx="${xR}" cy="${r1(fy[i])}" r="${act ? 9 : 7}" fill="${DIM_COLORS[DOF[i]]}" stroke="${act ? '#111827' : '#fff'}" stroke-width="2"/>` +
+      text(xR + 14, fy[i] + 4, `${F[i]}  (${deg})`, { size: 12, weight: act ? 700 : 500 }) + '</g>';
+  });
+  let b = text(xL, 24, `Respondents (showing ${nShow} of ${X.length})`, { size: 12, weight: 700, anchor: 'middle' }) + text(xR - 8, 24, 'Factors (n endorsing, all respondents)', { size: 12, weight: 700, anchor: 'start' });
+  b += `<g>${edges}</g><g>${nodes}</g>`;
+  return { svg: svg(W, H, b, o.id), count };
+}
+
+
+root.AIRPMCharts = { DIM_COLORS, figNetwork, edgeSet, figPropagation, figDumbbell, figAmplification, figShock, figImpactRecovery, figScenario, figHeatmap, figBipartite, esc };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==========================================================================
+   AIRPM UI — state, rendering and interaction. Reads results from S.M / S.SENS only.
+   ========================================================================== */
+(function () {
+'use strict';
+const E = window.AIRPM, C = window.AIRPMCharts;
+const F = E.FACTORS, DIM = E.DIMENSIONS, DOF = E.DIM_OF, COL = C.DIM_COLORS, esc = C.esc;
+const $ = id => document.getElementById(id);
+const pct = x => (x * 100).toFixed(2) + '%';
+const pp = x => (x >= 0 ? '+' : '−') + Math.abs(x * 100).toFixed(2) + ' pp';
+const cls = x => (x > 1e-12 ? 'pos' : x < -1e-12 ? 'neg' : '');
+const dimCell = i => `<span class="dimdot" style="background:${COL[DOF[i]]}"></span>${DIM[DOF[i]].name}`;
+const finfo = i => `${F[i]} (${DIM[DOF[i]].name})|AI characteristic: ${E.FACTOR_INFO[i][0]}|Organizational necessity: ${E.FACTOR_INFO[i][1]}`;
+const fac = i => `<b data-tip="${esc(finfo(i))}" style="cursor:help">${esc(F[i])}</b>`;
+const convTxt = (t, n) => (t == null ? `Not reached within ${n} iterations` : String(t));
+
+const S = {
+  X: null, ids: null, report: null, source: '', rejected: null, P: Object.assign({}, E.DEFAULTS), M: null, SENS: null,
+  ALT: null, DIAG: null, BOOT: null, bootTimer: null,
+  ui: { tab: 'dashboard', bpLimit: 30, bpSel: {}, netMode: 'all', netK: 3, focus: null, pinned: null, view: { k: 1, x: 0, y: 0 },
+        mx: 'W', scen: Array(F.length).fill(0), resFactor: null, heat: 'sd', dims: { dashDim: -1, bpDim: -1, netDim: -1, propDim: -1, ampDim: -1 } }
+};
+window.AIRPM_STATE = S; // exposed for verification only
+
+/* ---------------- generic helpers ---------------- */
+function download(name, content, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type: type || 'text/csv;charset=utf-8' }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const csvCell = v => { const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+/** cols: [{h, html(r), v(r) sort/csv value, n numeric}] */
+function mountTable(el, cols, rows, opt = {}) {
+  let sortK = opt.sortK ?? null, dir = opt.dir ?? 1;
+  const draw = () => {
+    let rs = rows.slice();
+    if (sortK != null) rs.sort((a, b) => { const x = cols[sortK].v(a), y = cols[sortK].v(b); return (x > y ? 1 : x < y ? -1 : 0) * dir; });
+    el.innerHTML = `<table class="${opt.pub ? 'pubtable' : ''}">${opt.caption ? `<caption>${opt.caption}</caption>` : ''}<thead><tr>${cols.map((c, k) => `<th class="${c.n ? 'n' : ''} ${opt.sortable ? 'sortable' : ''}" data-k="${k}">${c.h}${sortK === k ? (dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr></thead><tbody>` +
+      rs.map(r => `<tr${opt.rowStyle ? ` style="${opt.rowStyle(r)}"` : ''}>${cols.map(c => `<td class="${c.n ? 'n' : ''}">${c.html(r)}</td>`).join('')}</tr>`).join('') + '</tbody></table>';
+    if (opt.sortable) el.querySelectorAll('th').forEach(th => { th.onclick = () => { const k = +th.dataset.k; if (sortK === k) dir = -dir; else { sortK = k; dir = cols[k].n ? -1 : 1; } draw(); }; });
+  };
+  draw();
+  return { csv: () => [cols.map(c => c.csvH || c.h.replace(/<[^>]+>/g, '')).map(csvCell).join(',')].concat(rows.map(r => cols.map(c => csvCell(c.csv ? c.csv(r) : c.v(r))).join(','))).join('\n') };
+}
+function kpi(label, value, detail, extra = '') { return `<div class="kpi ${extra}"><div class="l">${label}</div><div class="v">${value}</div>${detail ? `<div class="d">${detail}</div>` : ''}</div>`; }
+function exportSVG(svgEl, name) {
+  const s = new XMLSerializer().serializeToString(svgEl);
+  download(name + '.svg', '<?xml version="1.0" encoding="UTF-8"?>\n' + s, 'image/svg+xml');
+}
+function exportPNG(svgEl, name, scale = 3) {
+  const vb = svgEl.viewBox.baseVal, w = vb.width, h = vb.height;
+  const clone = svgEl.cloneNode(true); clone.setAttribute('width', w); clone.setAttribute('height', h); clone.removeAttribute('style');
+  const s = new XMLSerializer().serializeToString(clone);
+  const img = new Image();
+  img.onload = () => {
+    const cv = document.createElement('canvas'); cv.width = w * scale; cv.height = h * scale;
+    const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    cv.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name + '.png'; document.body.appendChild(a); a.click(); a.remove(); }, 'image/png');
+  };
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(s)));
+}
+
+/* ---------------- data loading ---------------- */
+function useText(text, source) {
+  const L = E.loadDataset(text);
+  if (!L.ok) { S.rejected = { source, report: L.report }; if (!S.X) { S.report = L.report; } renderDQ(); updateChip(); return false; }
+  S.X = L.X; S.ids = L.ids; S.report = L.report; S.source = source; S.rejected = null;
+  S.ui.bpSel = {}; S.ui.scen = Array(F.length).fill(0); S.ui.resFactor = null; S.ui.pinned = null; S.ui.focus = null;
+  clearResults(); renderDQ(); updateChip(); return true;
+}
+/* ---------------- Excel (.xlsx / .xls) support ----------------
+   SheetJS is fetched from cdnjs only when an Excel file is chosen, so CSV uploads keep working offline.
+   Each worksheet is converted to CSV and validated by the same loader; the first valid sheet is used. */
+const SHEETJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+let sheetJsPromise = null;
+function loadSheetJS() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (!sheetJsPromise) sheetJsPromise = new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = SHEETJS_URL; sc.async = true;
+    sc.onload = () => (window.XLSX ? res(window.XLSX) : rej(new Error('Excel reader did not initialise.')));
+    sc.onerror = () => { sheetJsPromise = null; rej(new Error('Could not load the Excel reader (needs an internet connection). Save the sheet as CSV and upload that instead.')); };
+    document.head.appendChild(sc);
+  });
+  return sheetJsPromise;
+}
+function excelFailure(source, message) {
+  const rep = { errors: [message], warnings: [], issues: [], missing: 0, nonNumeric: 0, outOfRange: 0, nonInteger: 0, raggedRows: 0, idColumn: false, headerMap: [], mappedBy: 'name', N: 0, min: null, max: null };
+  S.rejected = { source, report: rep }; if (!S.X) S.report = rep; renderDQ(); updateChip();
+}
+async function readExcel(file) {
+  const chip = $('dsChip'); const prev = chip.textContent; chip.textContent = 'Reading ' + file.name + '…';
+  try {
+    const [XLSX, buf] = await Promise.all([loadSheetJS(), file.arrayBuffer()]);
+    const wb = XLSX.read(buf, { type: 'array' });
+    if (!wb.SheetNames.length) { excelFailure(file.name, 'The workbook contains no worksheets.'); return; }
+    let firstText = null;
+    for (const name of wb.SheetNames) {
+      const text = XLSX.utils.sheet_to_csv(wb.Sheets[name], { blankrows: false });
+      if (firstText === null) firstText = text;
+      if (E.loadDataset(text).ok) { useText(text, wb.SheetNames.length > 1 ? `${file.name} [${name}]` : file.name); return; }
+    }
+    useText(firstText, `${file.name} [${wb.SheetNames[0]}]`);   // none valid: report the first sheet's problems
+  } catch (err) {
+    chip.textContent = prev; excelFailure(file.name, err.message || String(err));
+  }
+}
+/** Results exist only after Run Simulation; a new upload clears them. */
+function clearResults() {
+  clearTimeout(S.bootTimer); S.M = null; S.SENS = null; S.ALT = null; S.DIAG = null; S.BOOT = null;
+  document.body.classList.add('no-results'); document.body.classList.remove('stale');
+  setEmptyMessages();
+}
+const MODEL_KEYS = ['tau', 'alpha', 'd', 'maxIter', 'ampPct', 'shockPct', 'shockDur', 'recoveryPct', 'horizon'];
+function isStale() { return !!S.M && MODEL_KEYS.some(k => S.M.P[k] !== S.P[k]); }
+function runSimulation() {
+  if (!S.X) return;
+  readParams(true);
+  const b = $('btnRun'); b.disabled = true; b.textContent = 'Running…';
+  setTimeout(() => {
+    try { recompute(); } finally { b.textContent = 'Run Simulation'; b.disabled = !S.X; }
+  }, 30);
+}
+function setEmptyMessages() {
+  const msg = !S.X
+    ? '<h2>No dataset loaded</h2><p>Upload a survey file (CSV, .xlsx or .xls) with the file selector above: 18 factor columns, ratings 1–5. Identifier, demographic or subtotal columns are ignored. Then click <b>Run Simulation</b>.</p>'
+    : `<h2>Dataset ready: ${esc(S.source)} (N = ${S.X.length})</h2><p>Review the data-quality panel on the Dashboard, adjust parameters if needed, then click <b>Run Simulation</b> to compute the results.</p>`;
+  document.querySelectorAll('.empty-msg').forEach(el => { el.innerHTML = msg; });
+}
+function updateChip() {
+  const c = $('dsChip'); $('btnRun').disabled = !S.X;
+  if (S.rejected) { c.className = 'chip bad'; c.textContent = `Rejected: ${S.rejected.source}${S.X ? ` — still using ${S.source}` : ''}`; return; }
+  if (!S.X) { c.className = 'chip idle'; c.textContent = 'No dataset loaded'; return; }
+  if (!S.M) { c.className = 'chip ready'; c.textContent = `${S.source} · N = ${S.X.length} · valid · ready to run`; return; }
+  if (isStale()) { c.className = 'chip ready'; c.textContent = `${S.source} · N = ${S.X.length} · parameters changed · re-run needed`; return; }
+  c.className = 'chip'; c.textContent = `${S.source} · N = ${S.X.length} · results current`;
+}
+
+/* ---------------- parameters ---------------- */
+const PARAM_INPUTS = [
+  ['pTau', 'tau', v => Math.round(Math.min(5, Math.max(1, v)))], ['pAlpha', 'alpha', v => Math.min(0.99, Math.max(0.01, v))],
+  ['pD', 'd', v => Math.min(0.99, Math.max(0.01, v))], ['pIter', 'maxIter', v => Math.round(Math.min(10000, Math.max(1, v)))],
+  ['ampPct', 'ampPct', v => Math.min(100, Math.max(1, v))], ['rShock', 'shockPct', v => Math.min(-1, Math.max(-100, v))],
+  ['rDur', 'shockDur', v => Math.round(Math.min(5000, Math.max(1, v)))], ['rCrit', 'recoveryPct', v => Math.min(99.9, Math.max(50, v))],
+  ['rHor', 'horizon', v => Math.round(Math.min(10000, Math.max(2, v)))],
+  ['bB', 'bootB', v => Math.round(Math.min(20000, Math.max(100, v)))],
+  ['bSeed', 'bootSeed', v => Math.round(Math.min(2147483647, Math.max(1, v)))]
+];
+function syncInputs() { PARAM_INPUTS.forEach(([id, k]) => { $(id).value = S.P[k]; }); }
+let timer = null;
+function readParams(silent) {
+  PARAM_INPUTS.forEach(([id, k, fix]) => { const v = Number($(id).value); if (isFinite(v) && $(id).value !== '') S.P[k] = fix(v); });
+  if (S.P.shockDur >= S.P.horizon) S.P.shockDur = S.P.horizon - 1;
+  syncInputs();
+  if (!silent) { document.body.classList.toggle('stale', isStale()); updateChip(); }
+}
+
+/* ---------------- recompute + render ---------------- */
+function recompute() {
+  if (!S.X) return;
+  S.M = E.runModel(S.X, S.P); S.SENS = E.sensitivity(S.X, S.M);
+  S.ALT = E.altNetworks(S.X, S.M); S.DIAG = E.diagnostics(S.X);
+  S.BOOT = null; scheduleBootstrap();
+  if (S.ui.resFactor == null) S.ui.resFactor = E.argmax(S.M.res.map(z => z.impact));
+  if (S.ui.focus == null) S.ui.focus = E.argmax(S.M.Rstar);
+  document.body.classList.remove('no-results', 'stale');
+  updateChip(); renderAll();
+}
+function renderAll() {
+  const fns = [renderDQ, renderDashboard, renderBipartite, renderNetwork, renderPropagation, renderScenario, renderAmplification, renderResilience, renderSensitivity, renderMatrix, renderMethod];
+  fns.forEach(fn => { try { fn(); } catch (err) { console.error(fn.name, err); } });
+}
+
+/* ---------------- DASHBOARD ---------------- */
+function renderDQ() {
+  const r = S.report;
+  if (!r) {
+    $('dqSource').innerHTML = 'No dataset loaded. Upload a survey file (CSV, .xlsx or .xls) using the file selector at the top of the page. The tool does not include any built-in data, and all results are computed only from the file you upload.';
+    $('dqGrid').innerHTML = ''; $('dqMsgs').innerHTML = ''; return;
+  }
+  $('dqSource').innerHTML = `Source: <b>${esc(S.source || '—')}</b>. ${r.idColumn ? 'Identifier column detected and excluded from the factor columns.' : 'No identifier column; respondents are labelled R1…RN.'} Headers were mapped to canonical factors by ${r.mappedBy} (whitespace trimmed, byte-order mark removed). Numeric values are used unaltered.`;
+  $('dqGrid').innerHTML = [kpi('Respondents N', r.N), kpi('Factors', 18), kpi('Dimensions', 5), kpi('Missing values', r.missing), kpi('Invalid values', r.invalid ?? 0, 'non-numeric or outside 1–5'), kpi('Minimum rating', r.min ?? '—'), kpi('Maximum rating', r.max ?? '—')].join('');
+  let m = r.warnings.map(w => `<div class="note warn">${esc(w)}</div>`).join('');
+  if (S.rejected) {
+    const q = S.rejected.report;
+    m += `<div class="note warn"><b>Upload rejected (${esc(S.rejected.source)}):</b> ${q.errors.map(esc).join(' ')} ${S.X ? 'The previously loaded valid dataset remains in use.' : 'No dataset is loaded; please correct the file and upload it again.'}</div>` + (q.issues.length ? `<div class="issues">${q.issues.slice(0, 200).map(esc).join('<br>')}${q.issues.length > 200 ? `<br>… ${q.issues.length - 200} more` : ''}</div>` : '');
+  }
+  $('dqMsgs').innerHTML = m;
+}
+function renderDashboard() {
+  const M = S.M; if (!M) return;
+  const a = M.a, R = M.Rstar, ampTop = M.amp.reduce((b, z) => (z.index > b.index ? z : b)), shockTop = M.res.reduce((b, z) => (z.impact > b.impact ? z : b));
+  const iMax = E.argmax(a), iMin = E.argmin(a), eMax = E.argmax(R), eMin = E.argmin(R), pMax = E.argmax(M.pr);
+  $('kpiHero').innerHTML = kpi('Overall intrinsic AI readiness', pct(M.overallR0), 'Mean of 18 Rᵢ(0) = (meanᵢ − 1)/4', 'hero') +
+    kpi('Overall equilibrium AI readiness', pct(M.overallRs), 'Mean of 18 R*ᵢ (modelled)', 'hero') +
+    kpi('Overall change', pp(M.overallChange), Math.abs(M.overallChange) < 1e-9 ? 'Invariant under row-stochastic W: propagation redistributes readiness across factors, it does not create it' : '', 'hero');
+  $('kpiGrid').innerHTML = [
+    kpi('Highest intrinsic factor', F[iMax], pct(a[iMax])), kpi('Lowest intrinsic factor', F[iMin], pct(a[iMin])),
+    kpi('Highest equilibrium factor', F[eMax], pct(R[eMax])), kpi('Lowest equilibrium factor', F[eMin], pct(R[eMin])),
+    kpi('Highest AI Readiness Rank (ARR)', F[pMax], `ARR = ${M.pr[pMax].toFixed(5)} (folksonomy ranking, not readiness)`),
+    kpi('Highest amplification', ampTop.factor, `index ${ampTop.index.toFixed(3)} at +${S.P.ampPct}%`),
+    kpi('Highest shock sensitivity', shockTop.factor, `system impact ${(shockTop.impact * 100).toFixed(3)} pp at ${S.P.shockPct}%`),
+    kpi('System convergence iteration', convTxt(M.prop.systemConv, S.P.maxIter), `|ΔRᵢ| < ${S.P.tol} for ${S.P.stable} consecutive iterations`)
+  ].join('');
+  $('dimCards').innerHTML = M.dims.map(d => `<div class="kpi dimcard" style="border-top-color:${COL[d.k]}"><div class="l">${d.name}</div>
+     <div class="d">Intrinsic <b>${pct(d.R0)}</b></div><div class="d">Equilibrium <b>${pct(d.Rs)}</b></div>
+     <div class="d">Change <b class="${cls(d.change)}">${pp(d.change)}</b></div><div class="d">Rank (equilibrium) <b>${d.rank}</b> of 5 · intrinsic rank ${d.rankR0}</div></div>`).join('');
+  const ch = M.change, pos = E.argmax(ch), neg = E.argmin(ch), spillTop = M.amp.reduce((b, z) => (z.spill > b.spill ? z : b));
+  $('rqCards').innerHTML =
+    `<div class="card rq"><h2>Propagation and equilibrium</h2><dl>
+      <dt>Convergence iteration</dt><dd>${convTxt(M.prop.systemConv, S.P.maxIter)}</dd>
+      <dt>Highest equilibrium</dt><dd>${F[eMax]} (${pct(R[eMax])})</dd><dt>Equilibrium bottleneck</dt><dd>${F[eMin]} (${pct(R[eMin])})</dd><dt>Lowest scorecard (intrinsic)</dt><dd>${F[iMin]} (${pct(a[iMin])} → R* ${pct(R[iMin])})</dd>
+      <dt>Largest positive redistribution</dt><dd class="pos">${F[pos]} (${pp(ch[pos])})</dd><dt>Largest negative redistribution</dt><dd class="neg">${F[neg]} (${pp(ch[neg])})</dd></dl></div>` +
+    `<div class="card rq"><h2>Amplification</h2><dl>
+      <dt>Highest amplification index</dt><dd>${ampTop.factor} (${ampTop.index.toFixed(3)})</dd>
+      <dt>Highest absolute spillover</dt><dd>${spillTop.factor} (${pp(spillTop.spill)})</dd>
+      <dt>Affected factors (top amplifier)</dt><dd>${ampTop.affected} of 17</dd><dt>Intervention</dt><dd>+${S.P.ampPct}% relative, one factor at a time</dd></dl>
+      <p class="small">Model-implied spillovers, not causal estimates.</p></div>` +
+    `<div class="card rq"><h2>Resilience</h2><dl>
+      <dt>Most shock-sensitive factor</dt><dd>${shockTop.factor}</dd><dt>Maximum system impact</dt><dd>${(shockTop.impact * 100).toFixed(3)} pp</dd>
+      <dt>Recovery time</dt><dd>${shockTop.recovery == null ? `Not reached within ${S.P.horizon - S.P.shockDur} post-shock iterations` : shockTop.recovery + ' iterations after shock'}</dd>
+      <dt>Recovery completeness</dt><dd>${(shockTop.completeness * 100).toFixed(2)}% at t = ${S.P.horizon}</dd></dl>
+      <p class="small">Shock ${S.P.shockPct}% for ${S.P.shockDur} iterations; criterion ${S.P.recoveryPct}%.</p></div>`;
+  const low = F.map((_, i) => i).sort((x, y) => R[x] - R[y]).slice(0, 3), prRank = E.ranksDesc(M.pr);
+  $('attn').innerHTML = `<div class="grid g3">${low.map((i, k) => kpi(`#${k + 1} lowest equilibrium`, F[i], `${DIM[DOF[i]].name} · R* ${pct(R[i])} · intrinsic ${pct(a[i])} (${pp(ch[i])}) · ARR rank ${prRank[i]}`)).join('')}</div>`;
+  const d = S.ui.dims.dashDim, rows = F.map((_, i) => i).filter(i => d < 0 || DOF[i] === d), eqRank = E.ranksDesc(R);
+  const t = mountTable($('factorTable'), [
+    { h: 'Factor', html: fac, v: i => F[i] }, { h: 'Dimension', html: dimCell, v: i => DIM[DOF[i]].name },
+    { h: 'Mean rating', n: 1, html: i => M.means[i].toFixed(3), v: i => M.means[i] },
+    { h: 'Intrinsic Rᵢ(0)', n: 1, html: i => pct(a[i]), v: i => a[i] },
+    { h: 'ARR (folksonomy)', n: 1, html: i => M.pr[i].toFixed(5), v: i => M.pr[i] }, { h: 'ARR rank', n: 1, html: i => prRank[i], v: i => prRank[i] },
+    { h: 'Equilibrium R*ᵢ', n: 1, html: i => `<b>${pct(R[i])}</b>`, v: i => R[i] },
+    { h: 'Change', n: 1, html: i => `<span class="${cls(ch[i])}">${pp(ch[i])}</span>`, v: i => ch[i] },
+    { h: 'Eq. rank', n: 1, html: i => eqRank[i], v: i => eqRank[i] },
+    { h: 'Convergence iteration', n: 1, html: i => convTxt(M.prop.factorConv[i], S.P.maxIter), v: i => M.prop.factorConv[i] ?? Infinity }
+  ], rows, { sortable: true, sortK: 6, dir: -1 });
+  $('expFactors').onclick = () => download('airpm_factor_results.csv', t.csv());
+}
+
+/* ---------------- BIPARTITE ---------------- */
+function renderBipartite() {
+  const M = S.M; if (!M) return;
+  const lim = S.ui.bpLimit === 'all' ? S.X.length : S.ui.bpLimit;
+  document.querySelectorAll('.bl').forEach(b => b.classList.toggle('on', String(S.ui.bpLimit) === b.dataset.bl));
+  const rating = $('bpRating').value, dim = S.ui.dims.bpDim;
+  const res = C.figBipartite(M, S.X, S.ids, { limit: lim, rating, dim, sel: S.ui.bpSel, id: 'bpSvg' });
+  $('bpFig').innerHTML = res.svg;
+  let totalAll = 0; S.X.forEach(r => r.forEach(v => { if (v >= S.P.tau) totalAll++; }));
+  const rl = { all: `all endorsed ratings (≥ ${S.P.tau})`, 4: 'rating 4 only', 5: 'rating 5 only', 45: 'ratings 4–5' }[rating];
+  $('bpStatus').innerHTML = `Showing ${Math.min(lim, S.X.length)} of ${S.X.length} respondents · ${res.count} edges drawn (${rl}${dim >= 0 ? `, ${DIM[dim].name} only` : ''}) · full dataset: ${totalAll} endorsement edges at τ = ${S.P.tau}`;
+  if (res.count === 0 && (rating === '4' && S.P.tau > 4)) $('bpStatus').innerHTML += ' · rating 4 is below τ, so no rating-4 endorsements exist';
+  $('bpList').innerHTML = S.ids.map(x => `<option value="${esc(x)}">`).join('') + F.map(f => `<option value="${esc(f)}">`).join('');
+  const sel = S.ui.bpSel;
+  if (sel.r != null) {
+    const r = sel.r, list = F.map((f, i) => ({ f, i, v: S.X[r][i] })).filter(z => z.v >= S.P.tau);
+    $('bpDetail').innerHTML = `<b>${esc(S.ids[r])}</b> endorses ${list.length} of 18 factors at τ = ${S.P.tau}: ${list.map(z => `${esc(z.f)} (${z.v})`).join(', ') || 'none'}.`;
+  } else if (sel.f != null) {
+    const i = sel.f, v = S.X.map(r => r[i]), n4 = v.filter(x => x === 4 && x >= S.P.tau).length, n5 = v.filter(x => x === 5).length, nAll = v.filter(x => x >= S.P.tau).length;
+    $('bpDetail').innerHTML = `<b>${esc(F[i])}</b> (${DIM[DOF[i]].name}) is endorsed by ${nAll} of ${S.X.length} respondents at τ = ${S.P.tau} (rating 4: ${n4}, rating 5: ${n5}). Mean rating ${M.means[i].toFixed(3)}, intrinsic readiness ${pct(M.a[i])}.`;
+  } else $('bpDetail').innerHTML = 'Click a respondent to highlight their endorsed factors, or click a factor to highlight its endorsing respondents. Hover over an edge to see the respondent, factor and rating.';
+}
+
+/* ---------------- NETWORK ---------------- */
+function netOpts() {
+  const m = S.ui.netMode;
+  return { mode: m === 'all' ? 'all' : m === 'ego' ? 'ego' : 'top', k: +m || 3, focus: S.ui.focus, egoK: 5, dim: S.ui.dims.netDim,
+           labels: $('netLabels').checked, highlight: m === 'ego' ? S.ui.focus : S.ui.highlight, interactive: true, id: 'netSvg', uid: 'i', caption: false };
+}
+function applyView() { const g = document.querySelector('#netSvg g.vp'); if (g) { const v = S.ui.view; g.setAttribute('transform', `translate(${v.x} ${v.y}) scale(${v.k})`); } }
+function renderNetwork() {
+  const M = S.M; if (!M) return;
+  document.querySelectorAll('.nm').forEach(b => b.classList.toggle('on', b.dataset.nm === S.ui.netMode));
+  $('netFocus').innerHTML = F.map((f, i) => `<option value="${i}" ${i === S.ui.focus ? 'selected' : ''}>${esc(f)}</option>`).join('');
+  const r = C.figNetwork(M, netOpts());
+  $('netFig').innerHTML = r.svg; applyView();
+  const st = $('netStatus'); st.textContent = r.edges.label; st.className = 'status-line' + (r.edges.filtered ? ' filter' : '');
+  if (M.dangling.length) st.textContent += ` · Note: ${M.dangling.map(i => F[i]).join(', ')} had no co-endorsements (dangling). Their uniform 1/17 rows are used in calculations but not drawn as empirical edges.`;
+  renderNetSide();
+}
+function renderNetSide() {
+  const M = S.M, i = S.ui.focus; if (i == null) return;
+  const out = F.map((_, j) => j).filter(j => j !== i).sort((x, y) => M.W[i][y] - M.W[i][x]);
+  const inn = F.map((_, j) => j).filter(j => j !== i).sort((x, y) => M.W[y][i] - M.W[x][i]);
+  const tbl = (list, w, dir) => `<div class="tbl" style="max-height:230px"><table><thead><tr><th>${dir}</th><th class="n">Weight</th><th class="n">aᵢⱼ</th></tr></thead><tbody>${list.map((j, k) => `<tr${k < 5 ? ' style="font-weight:600"' : ''}><td><span class="dimdot" style="background:${COL[DOF[j]]}"></span>${esc(F[j])}</td><td class="n">${w(j).toFixed(4)}</td><td class="n">${M.A[i][j]}</td></tr>`).join('')}</tbody></table></div>`;
+  let pin = '';
+  if (S.ui.pinned) { const [s, t] = S.ui.pinned; pin = `<div class="note"><b>Selected edge</b><br>${esc(F[s])} → ${esc(F[t])}: w = <b>${M.W[s][t].toFixed(4)}</b> (a = ${M.A[s][t]}, row total ${M.rowTotals[s]})<br>${esc(F[t])} → ${esc(F[s])}: w = ${M.W[t][s].toFixed(4)} (row total ${M.rowTotals[t]})</div>`; }
+  $('netSide').innerHTML = pin + `<div class="small">Selected factor</div><h2 style="margin:2px 0">${esc(F[i])}</h2><div class="small">${dimCell(i)}</div>
+    <div class="small" style="margin-top:6px">Equilibrium ${pct(M.Rstar[i])} · Intrinsic ${pct(M.a[i])} · ARR ${M.pr[i].toFixed(5)} · co-endorsement row total ${M.rowTotals[i]}</div>
+    <h4>Strongest outgoing (${esc(F[i])} → j), wᵢⱼ</h4>${tbl(out, j => M.W[i][j], 'To factor')}
+    <h4>Strongest incoming (j → ${esc(F[i])}), wⱼᵢ</h4>${tbl(inn, j => M.W[j][i], 'From factor')}
+    <p class="small">Bold = strongest five. Outgoing weights sum to 1 across all 17 targets. Incoming weights do not need to sum to 1.</p>`;
+}
+function wireNetwork() {
+  const box = $('netFig'); let drag = null;
+  const svgPt = (svgEl, e) => { const p = svgEl.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svgEl.getScreenCTM().inverse()); };
+  const zoomAt = (factor, pt) => { const v = S.ui.view, k2 = Math.min(6, Math.max(0.5, v.k * factor)); v.x = pt.x - (pt.x - v.x) * (k2 / v.k); v.y = pt.y - (pt.y - v.y) * (k2 / v.k); v.k = k2; applyView(); };
+  box.addEventListener('wheel', e => { const s = $('netSvg'); if (!s) return; e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, svgPt(s, e)); }, { passive: false });
+  box.addEventListener('pointerdown', e => { const s = $('netSvg'); if (!s) return; drag = { p: svgPt(s, e), v: Object.assign({}, S.ui.view), moved: false, target: e.target }; });
+  window.addEventListener('pointermove', e => { if (!drag) return; const s = $('netSvg'); const p = svgPt(s, e); const dx = p.x - drag.p.x, dy = p.y - drag.p.y; if (Math.hypot(dx, dy) > 3) drag.moved = true; if (drag.moved) { S.ui.view.x = drag.v.x + dx; S.ui.view.y = drag.v.y + dy; applyView(); } });
+  window.addEventListener('pointerup', () => {
+    if (!drag) return; const d = drag; drag = null; if (d.moved) return;
+    const n = d.target.closest && d.target.closest('[data-n]'), e = d.target.closest && d.target.closest('[data-e]');
+    if (n) { const i = +n.dataset.n; S.ui.focus = i; S.ui.highlight = S.ui.highlight === i && S.ui.netMode !== 'ego' ? null : i; renderNetwork(); }
+    else if (e) { S.ui.pinned = e.dataset.e.split('-').map(Number); renderNetSide(); }
+    else if (S.ui.highlight != null && S.ui.netMode !== 'ego') { S.ui.highlight = null; renderNetwork(); }
+  });
+  $('zIn').onclick = () => { const s = $('netSvg'), vb = s.viewBox.baseVal; zoomAt(1.25, { x: vb.width / 2, y: vb.height / 2 }); };
+  $('zOut').onclick = () => { const s = $('netSvg'), vb = s.viewBox.baseVal; zoomAt(0.8, { x: vb.width / 2, y: vb.height / 2 }); };
+  $('zReset').onclick = () => { S.ui.view = { k: 1, x: 0, y: 0 }; applyView(); };
+  document.querySelectorAll('.nm').forEach(b => { b.onclick = () => { S.ui.netMode = b.dataset.nm; renderNetwork(); }; });
+  $('netFocus').onchange = e => { S.ui.focus = +e.target.value; if (S.ui.netMode !== 'ego') S.ui.highlight = S.ui.focus; renderNetwork(); };
+  $('netLabels').onchange = renderNetwork;
+}
+
+/* ---------------- PROPAGATION ---------------- */
+function renderPropagation() {
+  const M = S.M; if (!M) return; const P = S.P, pr = M.prop, ch = M.change;
+  const pos = E.argmax(ch), neg = E.argmin(ch), conv = pr.factorConv.filter(x => x != null).length;
+  $('propKpis').innerHTML = [
+    kpi('System convergence iteration', convTxt(pr.systemConv, P.maxIter), `${conv} of 18 factors converged`),
+    kpi('Convergence tolerance', P.tol.toExponential(0), `sustained for ${P.stable} consecutive iterations`),
+    kpi('Max |R(N) − R*|', M.checks.iterVsClosed.toExponential(2), `iterative (N = ${P.maxIter}) vs. closed form`),
+    kpi('Overall R(0) → R*', `${pct(M.overallR0)} → ${pct(M.overallRs)}`, `change ${pp(M.overallChange)}`),
+    kpi('Largest positive redistribution', F[pos], pp(ch[pos])), kpi('Largest negative redistribution', F[neg], pp(ch[neg])),
+    kpi('Equilibrium dispersion (SD)', (E.sdPop(M.Rstar) * 100).toFixed(2) + ' pp', `intrinsic SD ${(E.sdPop(M.a) * 100).toFixed(2)} pp`),
+    kpi('Propagation parameter', `α = ${P.alpha}`, `max iterations ${P.maxIter}`)
+  ].join('');
+  let n = '';
+  if (Math.abs(M.overallChange) < 1e-9) n += `<div class="note">Overall readiness is conserved: because every row of W sums to 1, 1ᵀWᵀ = 1ᵀ, so Σᵢ Rᵢ(t+1) = (1−α)Σᵢ aᵢ + α Σᵢ Rᵢ(t) = Σᵢ aᵢ for every t when R(0) = a. The flat AIR(t) line in the figure is this identity, not a failure to propagate. Propagation <b>redistributes</b> readiness across factors. It does not increase total organizational readiness.</div>`;
+  if (pr.systemConv == null) n += `<div class="note warn">System-wide convergence was <b>not reached within ${P.maxIter} iterations</b>. Equilibrium values shown elsewhere are the analytical solution R*. Increase the maximum iterations to observe iterative convergence.</div>`;
+  $('propNotes').innerHTML = n;
+  $('propFig').innerHTML = C.figPropagation(M, { id: 'propSvg' });
+  $('dumbFig').innerHTML = C.figDumbbell(M, { dim: S.ui.dims.propDim, id: 'dumbSvg', ci: S.BOOT ? S.BOOT.factors : null, ciB: S.BOOT ? S.BOOT.B : 0 });
+  mountTable($('propTable'), table3Cols(M), F.map((_, i) => i).sort((x, y) => M.Rstar[y] - M.Rstar[x]), { sortable: true });
+}
+function table3Cols(M) {
+  const rk = E.ranksDesc(M.Rstar);
+  return [{ h: 'Rank', n: 1, html: i => rk[i], v: i => rk[i] }, { h: 'Factor', html: fac, v: i => F[i] }, { h: 'Dimension', html: dimCell, v: i => DIM[DOF[i]].name },
+    { h: 'Intrinsic', n: 1, html: i => pct(M.a[i]), v: i => M.a[i], csv: i => (M.a[i] * 100).toFixed(4) },
+    { h: 'Equilibrium', n: 1, html: i => `<b>${pct(M.Rstar[i])}</b>`, v: i => M.Rstar[i], csv: i => (M.Rstar[i] * 100).toFixed(4) },
+    { h: 'Change (pp)', n: 1, html: i => `<span class="${cls(M.change[i])}">${pp(M.change[i])}</span>`, v: i => M.change[i], csv: i => (M.change[i] * 100).toFixed(4) },
+    { h: 'Iterations to equilibrium', n: 1, html: i => convTxt(M.prop.factorConv[i], S.P.maxIter), v: i => M.prop.factorConv[i] ?? Infinity, csv: i => convTxt(M.prop.factorConv[i], S.P.maxIter) }];
+}
+
+/* ---------------- SCENARIO ---------------- */
+function scenarioCalc() {
+  const M = S.M, as = M.a.map((x, i) => E.clip01(x * (1 + S.ui.scen[i] / 100)));
+  const Rs = E.equilibrium(M.W, as, S.P.alpha); return { as, Rs, delta: Rs.map((x, i) => x - M.Rstar[i]) };
+}
+function buildScenarioRows() {
+  $('scRows').innerHTML = F.map((f, i) => `<div class="scen-row"><div>${fac(i)}</div><div class="small">${dimCell(i)}</div><div class="n" id="sca${i}"></div>
+    <input type="range" min="-100" max="100" step="1" value="${S.ui.scen[i]}" data-sc="${i}"><input type="number" min="-100" max="100" step="1" value="${S.ui.scen[i]}" data-scn="${i}"><div class="n" id="scs${i}"></div></div>`).join('');
+  $('scRows').querySelectorAll('[data-sc]').forEach(el => { el.oninput = () => { const i = +el.dataset.sc; S.ui.scen[i] = +el.value; $('scRows').querySelector(`[data-scn="${i}"]`).value = el.value; renderScenario(true); }; });
+  $('scRows').querySelectorAll('[data-scn]').forEach(el => { el.onchange = () => { const i = +el.dataset.scn; const v = Math.max(-100, Math.min(100, Number(el.value) || 0)); el.value = v; S.ui.scen[i] = v; $('scRows').querySelector(`[data-sc="${i}"]`).value = v; renderScenario(true); }; });
+}
+function renderScenario(keepRows) {
+  const M = S.M; if (!M) return;
+  if (!keepRows) buildScenarioRows();
+  const sc = scenarioCalc(); F.forEach((_, i) => { $('sca' + i).textContent = pct(M.a[i]); $('scs' + i).innerHTML = `<b>${pct(sc.as[i])}</b>`; });
+  const adj = S.ui.scen.filter(x => x !== 0).length, oS = E.mean(sc.Rs), clipped = F.filter((_, i) => M.a[i] * (1 + S.ui.scen[i] / 100) > 1 || M.a[i] * (1 + S.ui.scen[i] / 100) < 0).length;
+  $('scKpis').innerHTML = kpi('Factors adjusted', adj, clipped ? `${clipped} anchor(s) clipped to [0,1]` : '') + kpi('Baseline overall R*', pct(M.overallRs)) + kpi('Scenario overall R*ₛ', pct(oS)) + kpi('Overall change', `<span class="${cls(oS - M.overallRs)}">${pp(oS - M.overallRs)}</span>`, `equals mean anchor change ${pp(E.mean(sc.as) - M.overallR0)}`);
+  $('scNote').innerHTML = `<div class="note model">Modelled scenario assumption — not observed causal evidence. Scenario spillovers are model-implied and not causal estimates. The overall change equals the mean change in intrinsic anchors, because W is row-stochastic. Changes in individual factors show how the network redistributes readiness.</div>`;
+  $('scFig').innerHTML = C.figScenario(M, sc, { id: 'scSvg' });
+  mountTable($('scTable'), [{ h: 'Factor', html: fac, v: i => F[i] }, { h: 'Dimension', html: dimCell, v: i => DIM[DOF[i]].name },
+    { h: 'δᵢ (%)', n: 1, html: i => S.ui.scen[i], v: i => S.ui.scen[i] }, { h: 'aᵢ', n: 1, html: i => pct(M.a[i]), v: i => M.a[i] }, { h: 'aᵢ⁽ˢ⁾', n: 1, html: i => pct(sc.as[i]), v: i => sc.as[i] },
+    { h: 'Baseline R*ᵢ', n: 1, html: i => pct(M.Rstar[i]), v: i => M.Rstar[i] }, { h: 'Scenario R*ᵢ,ₛ', n: 1, html: i => `<b>${pct(sc.Rs[i])}</b>`, v: i => sc.Rs[i] },
+    { h: 'ΔRᵢ', n: 1, html: i => `<span class="${cls(sc.delta[i])}">${pp(sc.delta[i])}</span>`, v: i => sc.delta[i] }], F.map((_, i) => i), { sortable: true });
+}
+
+/* ---------------- AMPLIFICATION ---------------- */
+function table4Cols(extra) {
+  const cols = [{ h: 'Rank', n: 1, html: z => z.rank, v: z => z.rank }, { h: 'Factor', html: z => fac(z.i), v: z => z.factor }, { h: 'Dimension', html: z => dimCell(z.i), v: z => DIM[z.dim].name },
+    { h: 'Amplification index', n: 1, html: z => `<b>${z.index.toFixed(4)}</b>`, v: z => z.index },
+    { h: 'Positive spillover (pp)', n: 1, html: z => (z.spill * 100).toFixed(3), v: z => z.spill, csv: z => (z.spill * 100).toFixed(5) },
+    { h: 'Affected factors', n: 1, html: z => `${z.affected} of 17`, v: z => z.affected }];
+  if (extra) cols.splice(3, 0, { h: 'Direct anchor change (pp)', n: 1, html: z => (z.direct * 100).toFixed(3), v: z => z.direct, csv: z => (z.direct * 100).toFixed(5) },
+    { h: 'Target equilibrium change (pp)', n: 1, html: z => (z.ownChange * 100).toFixed(3), v: z => z.ownChange, csv: z => (z.ownChange * 100).toFixed(5) });
+  return cols;
+}
+function ampRows(M) { const rows = M.amp.slice().sort((a, b) => b.index - a.index); rows.forEach((z, k) => { z.rank = k + 1; }); return rows; }
+function renderAmplification() {
+  const M = S.M; if (!M) return;
+  const rows = ampRows(M), top = rows[0], spillTop = M.amp.reduce((b, z) => (z.spill > b.spill ? z : b));
+  $('ampKpis').innerHTML = kpi('Highest amplification index', top.factor, `${top.index.toFixed(4)} · ${top.affected} factors affected`) +
+    kpi('Highest absolute positive spillover', spillTop.factor, `${pp(spillTop.spill)} (index ${spillTop.index.toFixed(4)})`) +
+    kpi('Affected factors (range)', `${Math.min(...M.amp.map(z => z.affected))}–${Math.max(...M.amp.map(z => z.affected))} of 17`, 'factors with ΔR*ⱼ > 0');
+  const idErr = Math.max(...M.amp.map(z => Math.abs(z.totalChange - z.direct))), allPos = M.amp.every(z => z.diff.every(v => v > -1e-12));
+  $('ampIdentity').innerHTML = idErr < 1e-9 && allPos ? `<div class="note">Model property (verified numerically, max deviation ${idErr.toExponential(1)}): with row-stochastic W, the total equilibrium change across all 18 factors equals the direct anchor change Δaᵢ, and no factor decreases. The amplification index is therefore the <i>share</i> of the intervention that diffuses to other factors (1 − index is retained by the target). It is not a net gain in total readiness.</div>` : '';
+  $('ampFig').innerHTML = C.figAmplification(M, { dim: S.ui.dims.ampDim, id: 'ampSvg' });
+  const t = mountTable($('ampTable'), table4Cols(true), rows.filter(z => S.ui.dims.ampDim < 0 || z.dim === S.ui.dims.ampDim), { sortable: true });
+  $('expAmp').onclick = () => download('airpm_amplification.csv', t.csv());
+}
+
+/* ---------------- RESILIENCE ---------------- */
+function table5Cols(extra) {
+  const P = S.P, post = P.horizon - P.shockDur;
+  const cols = [{ h: 'Factor', html: z => fac(z.i), v: z => z.factor }, { h: 'Dimension', html: z => dimCell(z.i), v: z => DIM[z.dim].name },
+    { h: 'Shock magnitude', n: 1, html: () => P.shockPct + '%', v: () => P.shockPct },
+    { h: 'Minimum AIR', n: 1, html: z => pct(z.min), v: z => z.min, csv: z => (z.min * 100).toFixed(5) },
+    { h: 'System impact (pp)', n: 1, html: z => `<b>${(z.impact * 100).toFixed(3)}</b>`, v: z => z.impact, csv: z => (z.impact * 100).toFixed(5) },
+    { h: 'Recovery iteration', n: 1, html: z => (z.recovery == null ? `Not reached within ${post} iterations` : z.recovery), v: z => z.recovery ?? Infinity, csv: z => z.recovery ?? `Not reached within ${post} iterations` },
+    { h: 'Recovery completeness', n: 1, html: z => (z.completeness * 100).toFixed(2) + '%', v: z => z.completeness, csv: z => (z.completeness * 100).toFixed(4) }];
+  if (extra) cols.push({ h: 'Target factor max drop (pp)', n: 1, html: z => (z.ownMinDrop * 100).toFixed(2), v: z => z.ownMinDrop, csv: z => (z.ownMinDrop * 100).toFixed(4) });
+  return cols;
+}
+function renderResilience() {
+  const M = S.M; if (!M) return; const P = S.P;
+  $('rFactor').innerHTML = F.map((f, i) => `<option value="${i}" ${i === S.ui.resFactor ? 'selected' : ''}>${esc(f)}</option>`).join('');
+  const z = M.res[S.ui.resFactor];
+  $('resKpis').innerHTML = kpi('Baseline AIR', pct(z.base), 'overall readiness at R*') + kpi('Minimum AIR', pct(z.min), `at t = ${z.minT}`) +
+    kpi('System-level shock impact', (z.impact * 100).toFixed(3) + ' pp', `shock to ${z.factor}`) +
+    kpi('Recovery', z.recovery == null ? `Not reached within ${P.horizon - P.shockDur} iterations` : `${z.recovery} iterations`, `after shock end · completeness ${(z.completeness * 100).toFixed(2)}% at t = ${P.horizon}`);
+  const kTheory = Math.ceil(Math.log(1 - P.recoveryPct / 100) / Math.log(P.alpha) - 1e-12), recs = M.res.map(r => r.recovery).filter(x => x != null);
+  const same = recs.length === 18 && recs.every(x => x === recs[0]);
+  const coef = (1 - Math.pow(P.alpha, P.shockDur)) / 18, impDev = Math.max(...M.res.map(r => Math.abs(r.impact - coef * (M.a[r.i] - r.anchorShock))));
+  let n = `<div class="note"><b>Why recovery times coincide.</b> Because W is row-stochastic, overall AIR follows the scalar recursion AIR(t+1) − AIR* = α(AIR(t) − AIR*) once the anchor is restored, whatever the shocked factor. The share of lost AIR that is regained after k iterations is therefore 1 − αᵏ, and the ${P.recoveryPct}% criterion is met at k = ⌈ln(1 − ${P.recoveryPct / 100}) / ln α⌉ = <b>${kTheory}</b> for α = ${P.alpha}. ${same ? `All 18 factors indeed recover in ${recs[0]} iterations. This common value is a <b>mathematical consequence of α and the recovery criterion, not empirical evidence</b> of equal resilience.` : ''}</div>`;
+  n += `<div class="note">System impact = (1 − α<sup>D</sup>) · Δaᵢ / 18, where Δaᵢ is the anchor reduction (|δ|·aᵢ unless clipped) and D the shock duration (verified numerically, max deviation ${impDev.toExponential(1)}). The impact ranking therefore mirrors the intrinsic-readiness ranking. Factor-level differences in resilience appear in the target factor's own trajectory (panel b; last column of the table).</div>`;
+  $('resNotes').innerHTML = n;
+  $('resFig').innerHTML = C.figShock(M, S.ui.resFactor, { id: 'resSvg' });
+  $('resScatter').innerHTML = C.figImpactRecovery(M, { id: 'resScSvg' });
+  const t = mountTable($('resTable'), table5Cols(true), M.res.slice().sort((a, b) => b.impact - a.impact), { sortable: true });
+  $('expRes').onclick = () => download('airpm_resilience.csv', t.csv());
+}
+
+
+/* ---------------- BOOTSTRAP (async, seeded) ---------------- */
+function scheduleBootstrap() {
+  clearTimeout(S.bootTimer); const st = $('bStatus'); if (st) st.textContent = 'Bootstrap running…';
+  S.bootTimer = setTimeout(() => {
+    try { S.BOOT = E.bootstrap(S.X, S.M, S.P.bootB, S.P.bootSeed); } catch (err) { console.error(err); S.BOOT = null; }
+    [renderPropagation, renderBootstrap, renderDashboard, ].forEach(fn => { try { fn(); } catch (err) { console.error(fn.name, err); } });
+  }, 60);
+}
+function renderBootstrap() {
+  const M = S.M, B = S.BOOT; if (!M) return;
+  if (!B) { $('bStatus').textContent = 'Bootstrap running…'; $('bootKpis').innerHTML = ''; $('bootTable').innerHTML = ''; return; }
+  $('bStatus').textContent = `B = ${B.B}, seed ${B.seed} · τ = ${B.params.tau}, α = ${B.params.alpha}, d = ${B.params.d}`;
+  const f = B.factors, topP = F.map((_, i) => i).sort((x, y) => f[y].pTop - f[x].pTop), botP = F.map((_, i) => i).sort((x, y) => f[y].pBottom - f[x].pBottom);
+  $('bootKpis').innerHTML = kpi('Median rank correlation with baseline', B.rhoMedian.toFixed(3), `5th percentile ${B.rhoP05.toFixed(3)}`) +
+    kpi('Non-zero pairs across resamples', `${B.nzMin}–${B.nzMax}`, `mean ${B.nzMean.toFixed(1)} of 153`) +
+    kpi('Most likely top factor', F[topP[0]], `P(top) = ${f[topP[0]].pTop.toFixed(2)} · next ${F[topP[1]]} ${f[topP[1]].pTop.toFixed(2)}`) +
+    kpi('Most likely bottom factor', F[botP[0]], `P(bottom) = ${f[botP[0]].pBottom.toFixed(2)} · next ${F[botP[1]]} ${f[botP[1]].pBottom.toFixed(2)}`);
+  const t = mountTable($('bootTable'), [{ h: 'Factor', html: fac, v: i => F[i] }, { h: 'Dimension', html: dimCell, v: i => DIM[DOF[i]].name },
+    { h: 'R* (%)', n: 1, html: i => pct(M.Rstar[i]), v: i => M.Rstar[i] }, { h: '95% CI of R*', n: 1, html: i => `[${(f[i].R_lo * 100).toFixed(1)}, ${(f[i].R_hi * 100).toFixed(1)}]`, v: i => f[i].R_lo },
+    { h: 'Change (pp)', n: 1, html: i => `<span class="${cls(M.change[i])}">${pp(M.change[i])}</span>`, v: i => M.change[i] },
+    { h: '95% CI of change', n: 1, html: i => `[${sgn1(f[i].ch_lo)}, ${sgn1(f[i].ch_hi)}]`, v: i => f[i].ch_lo },
+    { h: 'P(change > 0)', n: 1, html: i => f[i].pChPos.toFixed(2), v: i => f[i].pChPos }, { h: 'Rank interval', n: 1, html: i => `${f[i].rank_lo}–${f[i].rank_hi}`, v: i => f[i].rank_lo },
+    { h: 'P(top)', n: 1, html: i => f[i].pTop.toFixed(2), v: i => f[i].pTop }, { h: 'P(bottom)', n: 1, html: i => f[i].pBottom.toFixed(2), v: i => f[i].pBottom },
+    { h: 'P(top ARR)', n: 1, html: i => f[i].pPrTop.toFixed(2), v: i => f[i].pPrTop }], F.map((_, i) => i).sort((x, y) => M.Rstar[y] - M.Rstar[x]), { sortable: true });
+  $('expBoot').onclick = () => download(`airpm_bootstrap_B${B.B}_seed${B.seed}.csv`, t.csv());
+}
+const sgn1 = x => (x >= 0 ? '+' : '−') + Math.abs(x * 100).toFixed(1);
+function renderRobustExtra() {
+  const M = S.M; if (!M) return;
+  mountTable($('sAlt'), [{ h: 'Network construction', html: o => `<b>${esc(o.name)}</b>`, v: o => o.name }, { h: 'Spearman ρ with baseline R*', n: 1, html: o => o.rho.toFixed(3), v: o => o.rho },
+    { h: 'Top factor', html: o => `${esc(F[o.top])} (${pct(o.R[o.top])})`, v: o => F[o.top] }, { h: 'Bottom factor', html: o => `${esc(F[o.bottom])} (${pct(o.R[o.bottom])})`, v: o => F[o.bottom] },
+    { h: 'Largest gain', html: o => `${esc(F[o.maxPos])} <span class="pos">${pp(o.dv[o.maxPos])}</span>`, v: o => o.dv[o.maxPos] }, { h: 'Largest loss', html: o => `${esc(F[o.maxNeg])} <span class="neg">${pp(o.dv[o.maxNeg])}</span>`, v: o => o.dv[o.maxNeg] },
+    { h: 'SD of R* (pp)', n: 1, html: o => (o.sd * 100).toFixed(2), v: o => o.sd }], S.ALT);
+  const low = S.ALT.filter(o => o.rho < 0.5).map(o => o.name);
+  $('sAltNote').innerHTML = low.length ? `<div class="note warn">The equilibrium configuration is <b>not robust</b> to: ${low.map(esc).join('; ')}. Under raw co-endorsement, R* combines how highly a capability is rated with how widely it is jointly endorsed. Report this definitional choice alongside the results.</div>` : '<div class="note">All alternative constructions preserve the baseline configuration (ρ ≥ 0.5).</div>';
+  const D = S.DIAG;
+  $('diagKpis').innerHTML = kpi("Cronbach's alpha (18 items)", D.cronbach.toFixed(3), 'coherence, not unidimensionality') + kpi('First component share', (D.pc1Share * 100).toFixed(1) + '%', `${D.nEigGt1} eigenvalues > 1 (single-factor test)`) +
+    kpi('Mean item r-wg', D.rwgMean.toFixed(2), `range ${Math.min(...D.rwg).toFixed(2)}–${Math.max(...D.rwg).toFixed(2)}`) + kpi('r-wg(j), 18 items', D.rwgj.toFixed(2), 'multi-item agreement');
+  mountTable($('diagTable'), [{ h: 'Factor', html: fac, v: i => F[i] }, { h: 'Dimension', html: dimCell, v: i => DIM[DOF[i]].name }, { h: 'Mean', n: 1, html: i => S.M.means[i].toFixed(2), v: i => S.M.means[i] },
+    { h: 'SD', n: 1, html: i => D.sd[i].toFixed(2), v: i => D.sd[i] }, { h: 'Endorsing (≥ τ)', n: 1, html: i => (S.X.filter(r => r[i] >= S.P.tau).length / S.X.length * 100).toFixed(1) + '%', v: i => S.X.filter(r => r[i] >= S.P.tau).length },
+    { h: 'r<sub>wg</sub>', csvH: 'rwg', n: 1, html: i => D.rwg[i].toFixed(2), v: i => D.rwg[i] }, { h: 'Corrected item–total r', n: 1, html: i => D.itemTotal[i].toFixed(3), v: i => D.itemTotal[i] }], F.map((_, i) => i), { sortable: true });
+}
+
+/* ---------------- SENSITIVITY ---------------- */
+function sensCols() {
+  const P = S.P, cur = (x, y) => (Math.abs(x - y) < 1e-9 ? ' (current)' : '');
+  return {
+    alpha: [{ h: 'α', html: z => `<b>${z.alpha}</b>${cur(z.alpha, P.alpha)}`, v: z => z.alpha },
+      { h: 'Equilibrium SD (pp)', n: 1, html: z => (z.sd * 100).toFixed(2), v: z => z.sd * 100 }, { h: 'Range (pp)', n: 1, html: z => (z.range * 100).toFixed(2), v: z => z.range * 100 },
+      { h: 'Max positive redistribution', html: z => `<span class="pos">${pp(z.maxPos)}</span> ${esc(F[z.maxPosF])}`, v: z => z.maxPos * 100, csv: z => `${(z.maxPos * 100).toFixed(3)} (${F[z.maxPosF]})` },
+      { h: 'Max negative redistribution', html: z => `<span class="neg">${pp(z.maxNeg)}</span> ${esc(F[z.maxNegF])}`, v: z => z.maxNeg * 100, csv: z => `${(z.maxNeg * 100).toFixed(3)} (${F[z.maxNegF]})` },
+      { h: 'Top factor', html: z => esc(F[z.top]), v: z => F[z.top] }, { h: 'Bottom factor (R*)', html: z => `${esc(F[z.bottom])} (${pct(z.bottomV)})`, v: z => z.bottomV, csv: z => `${F[z.bottom]} (${(z.bottomV * 100).toFixed(2)}%)` },
+      { h: 'Rank stability ρ', n: 1, html: z => z.rho.toFixed(3), v: z => z.rho }],
+    tau: [{ h: 'τ', html: z => `<b>${z.tau}</b>${cur(z.tau, P.tau)}`, v: z => z.tau }, { h: 'Non-zero pairs', n: 1, html: z => `${z.nz} / 153`, v: z => z.nz },
+      { h: 'Network density', n: 1, html: z => (z.density * 100).toFixed(2) + '%', v: z => z.density * 100 }, { h: 'Dangling rows', n: 1, html: z => z.dangling, v: z => z.dangling },
+      { h: 'Top equilibrium factor', html: z => esc(F[z.top]), v: z => F[z.top] }, { h: 'Bottom equilibrium factor', html: z => esc(F[z.bottom]), v: z => F[z.bottom] },
+      { h: 'Equilibrium SD (pp)', n: 1, html: z => (z.sd * 100).toFixed(2), v: z => z.sd * 100 }, { h: 'Rank stability ρ', n: 1, html: z => (isFinite(z.rho) ? z.rho.toFixed(3) : '—'), v: z => z.rho }],
+    d: [{ h: 'd', html: z => `<b>${z.d}</b>${cur(z.d, P.d)}`, v: z => z.d }, { h: 'Top ARR factor', html: z => esc(F[z.top]), v: z => F[z.top] },
+      { h: 'Top ARR', n: 1, html: z => z.topV.toFixed(5), v: z => z.topV }, { h: 'ARR rank stability ρ', n: 1, html: z => z.rho.toFixed(3), v: z => z.rho }]
+  };
+}
+function renderSensitivity() {
+  const M = S.M, SE = S.SENS; if (!M) return; const c = sensCols();
+  mountTable($('sAlpha'), c.alpha, SE.alpha); mountTable($('sTau'), c.tau, SE.tau); mountTable($('sD'), c.d, SE.d);
+  $('heatFig').innerHTML = C.figHeatmap(M, SE, $('heatMetric').value, { id: 'heatSvg' });
+  renderRobustExtra(); renderBootstrap();
+}
+
+/* ---------------- MATRIX ---------------- */
+function renderMatrix() {
+  const M = S.M; if (!M) return; const isW = S.ui.mx === 'W';
+  document.querySelectorAll('.mx').forEach(b => b.classList.toggle('on', b.dataset.mx === S.ui.mx));
+  const src = isW ? M.W : M.A, mx = Math.max(...src.flatMap((r, i) => r.filter((_, j) => j !== i)));
+  $('mxSub').innerHTML = isW ? `Row i = source factor, column j = target: <b>w<sub>ij</sub> = a<sub>ij</sub> / Σ<sub>k≠i</sub> a<sub>ik</sub></b>, the share of factor i's co-endorsement assigned to j. Every row sums to 1. W is asymmetric (w<sub>ij</sub> ≠ w<sub>ji</sub>). Propagation uses Wᵀ.` :
+    `<b>a<sub>ij</sub></b> = number of respondents with x<sub>ri</sub> ≥ ${S.P.tau} and x<sub>rj</sub> ≥ ${S.P.tau}. Diagonal set to 0. A is symmetric.`;
+  let h = `<table><thead><tr><th class="mhead">${isW ? 'from \\ to' : 'factor'}</th>${F.map((f, j) => `<th class="n" style="writing-mode:vertical-rl;transform:rotate(180deg);height:110px">${esc(f)}</th>`).join('')}<th class="n">${isW ? 'Row sum' : 'Row total'}</th></tr></thead><tbody>`;
+  F.forEach((f, i) => {
+    h += `<tr><th class="mhead"><span class="dimdot" style="background:${COL[DOF[i]]}"></span>${esc(f)}${M.dangling.includes(i) ? ' *' : ''}</th>`;
+    F.forEach((_, j) => { const v = src[i][j], u = i === j ? 0 : v / (mx || 1); h += `<td class="n" style="background:rgba(11,61,145,${(u * 0.75).toFixed(3)});color:${u > 0.55 ? '#fff' : 'inherit'}" data-tip="${esc(`${F[i]} → ${F[j]}|w = ${M.W[i][j].toFixed(5)} · a = ${M.A[i][j]}`)}">${i === j ? '—' : isW ? v.toFixed(3) : v}</td>`; });
+    h += `<td class="n"><b>${isW ? src[i].reduce((s, x) => s + x, 0).toFixed(3) : M.rowTotals[i]}</b></td></tr>`;
+  });
+  $('mxTable').innerHTML = h + '</tbody></table>';
+  $('mxNotes').innerHTML = `<div class="note">Non-zero undirected pairs: <b>${M.net.nonZeroPairs}</b> of ${M.net.pairs} (density ${(M.net.density * 100).toFixed(2)}%). Non-zero directed weights: <b>${M.empiricalEdges.length}</b>. Strongest raw co-endorsement: <b>${F[M.maxPair.i]} – ${F[M.maxPair.j]} = ${M.maxPair.v}</b>. Max row-sum error ${M.checks.rowSumErr.toExponential(1)}. Max asymmetry of A ${M.checks.symErr}.</div>` +
+    (M.dangling.length ? `<div class="note warn">* Dangling row(s): ${M.dangling.map(i => F[i]).join(', ')} have no co-endorsement at τ = ${S.P.tau}. Their influence is distributed uniformly across the other 17 factors (w<sub>ij</sub> = 1/17, w<sub>ii</sub> = 0).</div>` : '<div class="note">No dangling rows at the current τ.</div>');
+  const csvM = m => ['from/to,' + F.map(csvCell).join(',')].concat(m.map((r, i) => csvCell(F[i]) + ',' + r.join(','))).join('\n');
+  $('expW').onclick = () => download(`airpm_W_tau${S.P.tau}.csv`, csvM(M.W)); $('expA').onclick = () => download(`airpm_A_tau${S.P.tau}.csv`, csvM(M.A));
+}
+
+/* ---------------- METHODOLOGY ---------------- */
+function renderMethod() {
+  const M = S.M; if (!M) return; const P = S.P, ck = M.checks;
+  const ok = b => (b ? '<span class="pos">✔ pass</span>' : '<span class="neg">✘ fail</span>');
+  $('methodBody').innerHTML = `<h2>Methodology</h2>
+  <h3>Data structure</h3><p>N = ${M.N} respondents rate 18 AI-readiness factors on a five-level, behaviourally anchored maturity scale (1 = least mature … 5 = most mature; options A–E of each item). The factors are grouped into five dimensions of AI readiness:</p>
+  <table style="width:auto"><tbody>${DIM.map((D, k) => `<tr><td><span class="dimdot" style="background:${COL[k]}"></span><b>${D.name}</b></td><td>${D.idx.map(i => esc(F[i])).join(', ')}</td></tr>`).join('')}</tbody></table>
+  <h3>Factor definitions</h3><p>The 18 factors and five dimensions follow the organizational AI-readiness framework of Jöhnk, Weißert and Wyrtki (2021). Each factor is defined by the AI characteristic that makes it relevant and the organizational necessity it addresses. Hover over a factor name in any table to see its definition.</p>
+  <div class="tbl" style="max-height:none"><table><thead><tr><th>Dimension</th><th>Factor</th><th>AI characteristic</th><th>Organizational necessity</th></tr></thead><tbody>${F.map((f, i) => `<tr><td style="white-space:normal">${dimCell(i)}</td><td style="white-space:normal"><b>${esc(f)}</b></td><td style="white-space:normal;min-width:260px">${esc(E.FACTOR_INFO[i][0])}</td><td style="white-space:normal;min-width:260px">${esc(E.FACTOR_INFO[i][1])}</td></tr>`).join('')}</tbody></table></div>
+  <p class="small">Source: Jöhnk, J., Weißert, M., & Wyrtki, K. (2021). Ready or not, AI comes — An interview study of organizational AI readiness factors. <i>Business & Information Systems Engineering, 63</i>(1), 5–20.</p>
+  <h3>Intrinsic readiness</h3><div class="eq">Rᵢ(0) = aᵢ = (x̄ᵢ − 1) / 4 ∈ [0, 1];  Overall R₀ = (1/18) Σᵢ Rᵢ(0);  Dimension R₀ = mean of Rᵢ(0) over factors in the dimension</div>
+  <h3>Co-endorsement network</h3><div class="eq">aᵢⱼ = Σᵣ 𝟙[xᵣᵢ ≥ τ] · 𝟙[xᵣⱼ ≥ τ],  aᵢᵢ = 0,  τ = ${P.tau}</div><p>A is symmetric, with 18 × 17 / 2 = 153 possible undirected pairs.</p>
+  <h3>Normalised influence matrix</h3><div class="eq">wᵢⱼ = aᵢⱼ / Σₖ≠ᵢ aᵢₖ</div><p>wᵢⱼ is the proportion of factor i's observed co-endorsement assigned to factor j. Row normalisation makes W directional (wᵢⱼ ≠ wⱼᵢ in general), so the influence graph is a directed network. Every non-zero wᵢⱼ is a directed edge i → j.</p>
+  <h3>Dangling-row handling</h3><p>If Σₖ aᵢₖ = 0, factor i's influence is spread uniformly over the other 17 factors: wᵢⱼ = 1/17 (j ≠ i), wᵢᵢ = 0. This keeps W row-stochastic and avoids self-influence. Such imputed weights are not empirical and are not drawn as empirical edges. ${M.dangling.length ? `At τ = ${P.tau}: ${M.dangling.map(i => F[i]).join(', ')}.` : `At τ = ${P.tau} there are no dangling rows.`}</p>
+  <h3>Folksonomy-based AI Readiness Rank (ARR)</h3><p>Adapted from the folksonomy-based consumer brand ranking (CBR) algorithm of Dey, Jenamani and De (2025), which follows FolkRank and BiRank. Brands are replaced by AI-readiness factors and features by respondents.</p>
+  <p><b>1. Respondent–factor bipartite graph.</b> Every rating is an edge with weight x̃ᵣᵢ = (xᵣᵢ − 1)/4 ∈ [0, 1] (all ratings are used; no threshold), mirroring CBR's rescaling of feature scores to 0–1.</p>
+  <p><b>2. Weighted projection to the factor–factor graph</b> (CBR Eq. 1):</p><div class="eq">C(i, j) = Σᵣ x̃ᵣᵢ · x̃ᵣⱼ  (i ≠ j),  C(i, i) = 0</div>
+  <p><b>3. PageRank on the factor–factor graph</b> (CBR Eq. 2, the BrandRank step):</p><div class="eq">ARRᵢ = (1 − d)/18 + d Σⱼ ARRⱼ · C(j, i) / Σₖ C(j, k),  Σᵢ ARRᵢ = 1,  d = ${P.d}</div>
+  <p>The ARR is a relational, structural ranking: a factor ranks high when it is strongly co-rated with other highly ranked factors across respondents. It is <b>not</b> AI readiness, and it is not causal influence. It is computed on its own graph C and does not use τ or the propagation network W.</p>
+  <p class="small">Source: Dey, A., Jenamani, M., & De, A. (2025). Consumer sentiment-driven product ranking using a feature-level deep learning approach: The case of new and refurbished laptops. <i>IEEE Transactions on Engineering Management, 73</i>, 510–526. https://doi.org/10.1109/TEM.2025.3633709</p>
+  <h3>Propagation</h3><div class="eq">Rᵢ(t+1) = (1 − α) aᵢ + α Σⱼ Wⱼᵢ Rⱼ(t),  i.e.  R(t+1) = (1 − α) a + α Wᵀ R(t),  R(0) = a,  α = ${P.alpha}</div>
+  <h3>Equilibrium</h3><div class="eq">R* = (1 − α)(I − α Wᵀ)⁻¹ a</div><p>Solved directly by Gaussian elimination with partial pivoting. Since W is row-stochastic, 𝟏ᵀR* = 𝟏ᵀa, so Overall R* = Overall R₀. Propagation is interpreted as a redistribution (reconfiguration) of factor-level readiness, not an increase in total readiness.</p>
+  <h3>Convergence criterion</h3><p>Factor i has converged at the first iteration t at which |Rᵢ(t) − Rᵢ(t−1)| &lt; ${P.tol} has held for ${P.stable} consecutive iterations. System-wide convergence uses maxᵢ |Rᵢ(t) − Rᵢ(t−1)|. If the criterion is not met within the maximum number of iterations (currently ${P.maxIter}), the result is reported as "Not reached within N iterations". Reaching the maximum is never reported as convergence.</p>
+  <h3>Scenario</h3><div class="eq">aᵢ⁽ˢ⁾ = clip[aᵢ(1 + δᵢ/100), 0, 1],  R*ₛ = (1 − α)(I − αWᵀ)⁻¹ aₛ,  ΔRᵢ = R*ᵢ,ₛ − R*ᵢ</div><p>W is unchanged. Only intrinsic anchors change.</p>
+  <h3>Amplification</h3><p>For each factor i separately: aᵢ → clip[aᵢ(${P.ampPct < 0 ? `1 − ${-P.ampPct}` : `1 + ${P.ampPct}`}/100)], with W fixed. Reported: direct anchor change Δaᵢ, the target's equilibrium change ΔR*ᵢ, absolute positive spillover Σⱼ≠ᵢ max(0, ΔR*ⱼ), the number of other factors with ΔR*ⱼ &gt; 0, and the <b>amplification index</b> = positive spillover / Δaᵢ. The index (a normalised ratio) and absolute spillover (in pp) are different measures.</p>
+  <h3>Resilience (shock–recovery)</h3><p>For each factor i separately: start at R*; set aᵢ → clip[aᵢ(${P.shockPct < 0 ? `1 − ${-P.shockPct}` : `1 + ${P.shockPct}`}/100)] for t = 1…${P.shockDur}; restore the original a; continue propagating to t = ${P.horizon}. Reported: baseline AIR = mean(R*), minimum AIR, system impact = baseline − minimum, recovery iteration = first post-shock iteration at which AIR ≥ min + ${P.recoveryPct}% × impact (counted from the end of the shock), and recovery completeness = (AIR(${P.horizon}) − min) / impact. Identical recovery times across factors follow from the common α and recovery criterion. They are not empirical evidence.</p>
+  <h3>Robustness and uncertainty</h3><p>Alternative networks: Jaccard cᵢⱼ/(nᵢ + nⱼ − cᵢⱼ); lift cᵢⱼN/(nᵢnⱼ); positive Pearson correlations of ratings; graded Σᵣ min(x̃ᵣᵢ, x̃ᵣⱼ) with x̃ = (x − 1)/4. Each is row-normalised and propagated with the same a and α. Respondent bootstrap: respondents are resampled with replacement (default B = 2,000, seed 20260925, mulberry32 generator), a, W, ARR and R* are re-estimated, and percentile intervals use linear interpolation. Diagnostics: Cronbach's α; share of the first principal component of the item correlation matrix (Jacobi eigen-decomposition); r<sub>wg</sub> = 1 − s²/σ²<sub>EU</sub> with σ²<sub>EU</sub> = 2; and r<sub>wg(j)</sub>.</p>
+  <h3>Empirical vs. modelled quantities</h3>
+  <div class="grid g2"><div class="note"><b>EMPIRICAL</b><br>• Survey scores and intrinsic readiness<br>• Co-endorsement counts aᵢⱼ<br>• Influence weights wᵢⱼ<br>• Folksonomy AI Readiness Rank (ARR)<br>• Measurement diagnostics and bootstrap intervals</div>
+  <div class="note model"><b>MODELLED</b><br>• Equilibrium readiness R*<br>• Scenarios<br>• Amplification<br>• Resilience (shock–recovery)</div></div>
+  <div class="note warn"><b>Co-endorsement represents empirical association, not causal influence.</b><br><b>Scenario spillovers are model-implied and not causal estimates.</b></div>
+  <h3>Live validation checks (current data and parameters)</h3>
+  <table style="width:auto"><tbody>
+  <tr><td>A symmetric (max |aᵢⱼ − aⱼᵢ|)</td><td class="n">${ck.symErr}</td><td>${ok(ck.symErr === 0)}</td></tr>
+  <tr><td>W row-stochastic (max |Σⱼ wᵢⱼ − 1|)</td><td class="n">${ck.rowSumErr.toExponential(2)}</td><td>${ok(ck.rowSumErr < 1e-12)}</td></tr>
+  <tr><td>Directed edges = 2 × non-zero pairs (excluding dangling imputation)</td><td class="n">${M.empiricalEdges.length} = 2 × ${M.net.nonZeroPairs}</td><td>${ok(M.empiricalEdges.length === 2 * M.net.nonZeroPairs)}</td></tr>
+  <tr><td>Σ ARR = 1</td><td class="n">${M.pr.reduce((s, x) => s + x, 0).toFixed(12)}</td><td>${ok(Math.abs(M.pr.reduce((s, x) => s + x, 0) - 1) < 1e-12)}</td></tr>
+  <tr><td>Iterative R(${P.maxIter}) vs. closed-form R* (max abs diff)</td><td class="n">${ck.iterVsClosed.toExponential(2)}</td><td>${ok(ck.iterVsClosed < 1e-5)}</td></tr>
+  <tr><td>Mean invariance |Overall R* − Overall R₀|</td><td class="n">${ck.meanInvariance.toExponential(2)}</td><td>${ok(ck.meanInvariance < 1e-12)}</td></tr>
+  </tbody></table>`;
+}
+
+/* ---------------- tooltip ---------------- */
+function wireTooltip() {
+  const tip = $('tip');
+  document.addEventListener('mousemove', e => {
+    const t = e.target.closest && e.target.closest('[data-tip]');
+    if (!t) { tip.style.display = 'none'; return; }
+    const parts = t.getAttribute('data-tip').split('|');
+    tip.innerHTML = `<b>${esc(parts[0])}</b>${parts.slice(1).map(p => '<br>' + esc(p)).join('')}`;
+    tip.style.display = 'block';
+    const w = tip.offsetWidth, h = tip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14;
+    if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  });
+}
+
+/* ---------------- init ---------------- */
+function init() {
+  document.querySelectorAll('.dimSel').forEach(s => { s.innerHTML = '<option value="-1">All dimensions</option>' + DIM.map((d, k) => `<option value="${k}">${d.name}</option>`).join(''); s.onchange = () => { S.ui.dims[s.id] = +s.value; ({ dashDim: renderDashboard, bpDim: renderBipartite, netDim: renderNetwork, propDim: renderPropagation, ampDim: renderAmplification })[s.id](); }; });
+  $('tabs').querySelectorAll('button').forEach(b => { b.onclick = () => { $('tabs').querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b)); document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'p-' + b.dataset.tab)); S.ui.tab = b.dataset.tab; }; });
+  PARAM_INPUTS.forEach(([id]) => { const el = $(id); el.addEventListener('change', () => readParams()); el.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => readParams(), 500); }); });
+  $('btnDefaults').onclick = () => { S.P = Object.assign({}, E.DEFAULTS); syncInputs(); readParams(); };
+  $('btnRun').onclick = runSimulation; $('btnRun2').onclick = runSimulation;
+  $('fileIn').onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const done = () => { e.target.value = ''; };
+    if (/\.(xlsx|xls)$/i.test(file.name)) { readExcel(file).finally(done); return; }
+    const rd = new FileReader(); rd.onload = () => { useText(rd.result, file.name); done(); }; rd.readAsText(file);
+  };
+  $('btnTemplate').onclick = () => download('airpm_header_template.csv', F.map(csvCell).join(',') + '\n');
+  document.querySelectorAll('.bl').forEach(b => { b.onclick = () => { S.ui.bpLimit = b.dataset.bl === 'all' ? 'all' : +b.dataset.bl; renderBipartite(); }; });
+  $('bpRating').onchange = renderBipartite;
+  $('bpClear').onclick = () => { S.ui.bpSel = {}; $('bpSearch').value = ''; renderBipartite(); };
+  $('bpFig').addEventListener('click', e => {
+    const r = e.target.closest('[data-r]'), f = e.target.closest('[data-f]');
+    if (r) { const i = +r.dataset.r; S.ui.bpSel = S.ui.bpSel.r === i ? {} : { r: i }; renderBipartite(); }
+    else if (f) { const i = +f.dataset.f; S.ui.bpSel = S.ui.bpSel.f === i ? {} : { f: i }; renderBipartite(); }
+  });
+  $('bpSearch').addEventListener('change', () => {
+    const q = $('bpSearch').value.trim().toLowerCase(); if (!q) { S.ui.bpSel = {}; renderBipartite(); return; }
+    const ri = S.ids.findIndex(x => x.toLowerCase() === q), fi = F.findIndex(x => x.toLowerCase() === q), fp = F.findIndex(x => x.toLowerCase().includes(q));
+    if (ri >= 0) { S.ui.bpSel = { r: ri }; const lim = S.ui.bpLimit === 'all' ? Infinity : S.ui.bpLimit; if (ri >= lim) S.ui.bpLimit = 'all'; }
+    else if (fi >= 0 || fp >= 0) { const i = fi >= 0 ? fi : fp; S.ui.bpSel = { f: i }; if (S.ui.dims.bpDim >= 0 && DOF[i] !== S.ui.dims.bpDim) { S.ui.dims.bpDim = -1; $('bpDim').value = -1; } }
+    else { $('bpDetail').innerHTML = `No respondent or factor matches "${esc(q)}".`; return; }
+    renderBipartite();
+  });
+  wireNetwork();
+  $('scReset').onclick = () => { S.ui.scen = Array(F.length).fill(0); renderScenario(); };
+  $('scAll20').onclick = () => { S.ui.scen = Array(F.length).fill(20); renderScenario(); };
+  $('rFactor').onchange = e => { S.ui.resFactor = +e.target.value; renderResilience(); };
+  $('heatMetric').onchange = renderSensitivity;
+  $('bRun').onclick = () => { readParams(true); if (S.M) { S.BOOT = null; scheduleBootstrap(); } };
+  document.querySelectorAll('.mx').forEach(b => { b.onclick = () => { S.ui.mx = b.dataset.mx; renderMatrix(); }; });
+  wireTooltip();
+  syncInputs();
+  document.querySelectorAll('.panel').forEach(p => p.insertAdjacentHTML('afterbegin', '<div class="empty-msg"></div>'));
+  setEmptyMessages(); renderDQ(); updateChip();
+}
+init();
+})();
+
+</script>
+</body>
+</html>
